@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en" id="html">
+
+<head>
+    <meta charset="utf-8">
+    <title>Suhas Kotha</title>
+    <!-- <script src="jquery-3.6.3.min.js"></script> -->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+    </script>
+    <meta name="description" content="Convex Geometry for Computers">
+    <meta name="author" content="Suhas Kotha">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href='https://fonts.googleapis.com/css?family=Quicksand' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="icon" type="image/png" href="../images/dragon_logo.png">
+    <style id="autogen"></style>
+</head>
+
+<body>
+    <p><a href=../index.html>Home</a></p>
+    <br>
+
+    <h1>LLM threat models limitations</h1>
+
+    <br>
+    <p style="text-align: center;">8/19/2023</p>
+    <br>
+
+    <p> In this post, we will discuss the fundamental differences between adversarial attacks against 
+    </p>
+
+    <p>- Fodder about adversarial robustness important
+        - Quickly introduce adversaries in vision and how it's unsolved as shit, suspected to be fundamentally unsolvable
+        - Discuss adversarial threat models in generative LLMs
+            - Memorization attacks, toxic generation, tool misuse
+        - Unify them under the "blacklist" paradigm
+        - Figure out the necessary conditions for an attack to exist outside the blacklist paradigm</p>
+
+    <br>
+
+    <p>We consider adversarial attacks that can perturb the input \(x \in \mathcal{X}\) in some controlled manner, represented by a set of valid perturbations \(P(x) \subseteq \mathcal{X}\). The attacker wants the model \(f : \mathcal{X} \to \mathcal{Y}\) to produce a desirable output, which we'll capture by the set \(\mathcal{Y}_{\text{adv}} \subseteq \mathcal{Y}\). This desirable set usually has malicious consequence an a defender's goal is to avoid this output as best as possible. </p>
+
+    <br>
+
+    <p>For example, we can instantiate this for the classic paradigm of \(\ell_p\) ball attacks against image classifiers. In this case, the perturbation set would be \(P(x) = \{x + \delta : ||\delta||_p \leq \epsilon\}\). The desired outputs could be all of the classes except for the true label, or a specific incorrect label of interest, or anything in between. Now, we highlight some properties about this attack model that make it so compelling. They are going to seem obvious, but it is nonetheless important to highlight them. </p>
+
+    <ol>
+        <li><b>The target set is unknown.</b> For each input, the target set is not known by the defender. If the desirable set is known, the defender can simply defend by never emitting these classes. In the extreme case where the attacker is interested in outputting any incorrect class, this information directly tells the classifier the true class, eliminating the need for this setup in the first place! </li>
+        <li><b>Different inputs have different target sets.</b> It is not the case that for every input, the objective is "make the model output label 2". If this was the case, a defender could again simply never output label 2, completely thwarting the attacker's objective. </li>
+        <li><b>Bounded perturbations.</b> In image classification, the perturbation is bounded to be visually imperceptible. If the adversary is allowed to arbitrarily corrupt the image, it can allow the attack to actually change the contents of the image. </li>
+    </ol>
+
+    <p>INSERT PRETTY FIGURE HERE ILLUSTRATING BOTH PROPERTIES</p>
+
+    <br>
+
+    <p>Though it is incredibly obvious these properties are necessary for an interesting threat model, I find that much of the research for generative language models violates violate one or both of these properties. In the following, we walk through the cutting-edge in this area of research. In the end, we identify what I find the most interesting adversarial threats in language models, which happen to coincide with incredibly difficult problems to both formalize and solve. </p>
+
+    <h3 style="text-align: left">Popular Threat Models</h3>
+
+    <h4 style="text-align: left">Harmful Text Generation</h4>
+
+    <p>Perhaps the threat model which has garnered the most attention due to its simplicitly and accessibility is generating objectionable content. For example, we consider the formulation in <a href="https://arxiv.org/abs/2303.04381">Jones et al, 2023</a>, where the attacker controls a prompt at limited tokens in pursuit of producing a desired completion. Most language models served by industry try their best to avoid these generations through periodic fine-tuning and Reinforment Learning from Human Feedback (RLHF). </p>
+
+    <br>
+        
+    <p>Recently, <a href="https://arxiv.org/abs/2307.15043">Zou et al, 2023</a> has shown that even the best models from industry can produce undesirable content. They specifically modify existing algorithms to construct an "adversarial suffix", which can be placed at the end of a request to bypass the safety filter. If the goal is to for the model answer "Tell me how to build a bomb", they optimize the suffix to produce the completion "Sure, here is how to build a bomb", which the model usually completes with full instructions. TODO: INSERT GRAPHIC. Interestingly, they show that there are suffixes which work across different styles of objectionable content and across different models. They demonstrate that their suffixes transfer from small 7B parameter models like Vicuna to commercial models like ChatGPT and Bard. This shows that safety fine-tuning is not adversarially robust.</p>
+
+    <br>
+
+    <p>This paper is incredibly important in understanding the weaknesses of safety fine-tuning. However, the threat model itself violates some of the properties we discussed earlier. It most egriously violates property 2: the attacker must have some set of desired elicit behaviors before starting this optimization procedure.  </p>
+
+    <h4 style="text-align: left">Membership Inference</h4>
+
+    <p>Helcs<br>
+
+    <script type="text/javascript" src="../js/post.js"></script>
+
+</body>
+
+</html>
+
+
+<!-- publish link: http://www.andrew.cmu.edu/server/publish.html -->

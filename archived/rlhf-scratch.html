@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en" id="html">
+
+<head>
+    <meta charset="utf-8">
+    <title>Suhas Kotha</title>
+    <!-- <script src="jquery-3.6.3.min.js"></script> -->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+    </script>
+    <meta name="description" content="Reconstructing the Reward Model">
+    <meta name="author" content="Suhas Kotha">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href='https://fonts.googleapis.com/css?family=Quicksand' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="icon" type="image/png" href="../images/dragon_logo.png">
+    <style id="autogen"></style>
+</head>
+
+<body>
+    <p><a href=../index.html>Home</a></p>
+    <br>
+
+    <h1>Reconstructing the Reward Model</h1>
+
+    <br>
+    <p style="text-align: center;">8/31/2023</p>
+    <br>
+
+    <p> Most high quality large language models are produced by companies who invest millions into pre-training and reward models. Given a pre-trained and fine-tuned model from these service providers, can we reconstruct the reward model they used to produce the model?
+    </p>
+
+    <br>
+
+    <h3 style="text-align: left">Background</h3>
+
+    <p>We start by a brief summary of <a href="https://arxiv.org/abs/2205.11275">Korbak et al, 2022</a>. Suppose we are given a base model \(\pi_0\) which is trained to estimate the log-probability of an arbitrary sequence. Consider a reward model \(r\) that captures the log-likelihood of a sentence \(x\) being "SATisfactory" annealed by regularization strength \(\beta\), represented by \[\log P(\text{SAT} | x) = \frac{r(x)}{\beta}\] 
+    
+    Now, the optimal LM \(\pi^*\) generate sequences conditioned on being satisfactory, which corresponds to \[\pi^*(x) = \log P(x | \text{SAT}) = \log\left(\frac{P(\text{SAT} | x)P(x)}{P(\text{SAT})}\right) = \frac{r(x)}{\beta} + \pi_0(x) - C\]
+        
+    On the flip side, the RLHF objective is typically fine-tuning \(\pi_0\) with a KL-divergence constraint, which corresponds to maximizing the training objective \[J(\theta) = \mathrm{E}_{x\sim\pi_0}[r(x)] - \beta D_{\text{KL}}(\pi_{\theta}, \pi_0)\] <a href="https://arxiv.org/abs/2205.11275">Korbak et al, 2022</a> proves that minimizing this training objective is equivalent to minimizing \(D_{\text{KL}}(\pi_\theta, \pi^*)\).</p>
+
+    <h3 style="text-align: left">Reconstruction Attack</h3>
+
+    <p>Consider being given a pre-trained model and a fine-tuned model. We can recover the model's "effective reward model" by observing that at convergence, \[r(x) = \beta\left(\pi^*(x) - \pi_0(x) + C\right)\] Therefore, given blackbox access to a model, under strong assumptions on the model provider doing a good job, we can reconstruct what rewards the RLHF procedure reflects (up to constant factors). Note that if a fancy algorithm is being used, this doesn't reflect the original reward model; it represents the reward model which represents the preferences reflected by the entire fine-tuning procedure. This is arguably better for downstream applications. This can be used in a number of ways. </p>
+
+    <ol>
+        <li style="margin-bottom: 20px;"><b>Good reward models:</b> LLaMa 2 (<a href="https://arxiv.org/abs/2307.09288">Touvron et al, 2023</a>) shows in Figure 6 that open-source reward models like OpenAsssitant are really low quality, to the point where a properly prompted GPT-4 works better. We can use this method to get a SOTA open-source reward model. </li>
+        <li><b>Model distillation:</b> Model distillation has weird failure modes and does not work as expected (<a href="https://arxiv.org/abs/2305.15717">Gudibande et al, 2023</a>). For example, one problem is that fine-tuning smaller LM A with generations from LM B induces factual errors when the capabilities of A can not meet those of B. This process can "factor" out the base capabilities of B so that A only becomes less toxic and better formatted without inducing factual errors. </li>
+    </ol>
+
+    <script type="text/javascript" src="../js/post.js"></script>
+
+</body>
+
+</html>
+
+
+<!-- publish link: http://www.andrew.cmu.edu/server/publish.html -->

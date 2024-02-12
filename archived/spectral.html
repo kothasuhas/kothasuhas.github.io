@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en" id="html">
+
+<head>
+    <meta charset="utf-8">
+    <title>Suhas Kotha</title>
+    <!-- <script src="jquery-3.6.3.min.js"></script> -->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <!-- <script type="text/javascript" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-MML-AM_CHTML"></script> -->
+    </script>
+    <meta name="description" content="Paper Analysis: A Universal Law of Robustness via Isoperimetry">
+    <meta name="author" content="Suhas Kotha">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href='https://fonts.googleapis.com/css?family=Quicksand' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="icon" type="image/png" href="../images/dragon_logo.png">
+    <style id="autogen"></style>
+</head>
+
+<body>
+    <p><a href=../index.html>Home</a></p>
+    <br>
+
+    <h1>Visual Introduction to Spectral Graph Theory</h1>
+
+    <br>
+
+    <p> Today we're going to explore a beautiful probabilistic result connecting the mathematical hardness of
+        data distributions to the robustness of neural networks that fit them.
+        The <a href="https://arxiv.org/pdf/2212.13881.pdf">original paper</a> is very well-written so please defer to
+        them for the full math, steup, details, and related work. In
+        this post, we'll spend time on the assumed mathematical
+        background, a proof sketch to distill the essence of the argument, and a discussion on the broader significance
+        to robustness.
+    </p>
+
+    <h3 style="text-align: left">Theorem - Informal</h3>
+    <p>On realistic data distributions and assumptions, there exists an upper bound of the robustness of any function
+        with low loss, where the bound is looser for more parameters.</p>
+
+    <h3 style="text-align: left">Background</h3>
+
+    <p> <u><b>Lipschitz constant</b></u>: A function \(f\) is \(L\)-Lipschitz over a norm \(||\cdot||\) if for all
+        points
+        \(x_1, x_2\) in its domain, it
+        satisfies the
+        following implication.
+
+        $$||x_1 - x_2|| \leq c \Longrightarrow ||f(x_1) - f(x_2)|| \leq Lc$$
+
+        This says that when two inputs are close, the outputs are also close, highlighting the smoothness of such a
+        function. Therefore, a low constant says that
+        a function has a low "stretch" factor, compared to non-Lipschitz functions which are capable of egregiously
+        overfitting any training data.</p>
+
+    <br>
+    <div class="row">
+        <div class="column left" style="text-align:center; width: 60%;">
+            <canvas id="myCanvas" width=500 height=500 style="border: 1px solid; border-color: white"></canvas>
+        </div>
+        <div class="column right" style="width: 35%;">
+            <p id="adj_matrix" style="text-align:center;">Adjacency Matrix Here</p>
+            <br>
+            <p id="laplacian" style="text-align:center;">Laplacian Here</p>
+        </div>
+    </div>
+    <div>
+        <script src="js/spectral.js"></script>
+        <br>
+        <button onmousedown="clearall()" style="text-align:center">reset</button>
+    </div>
+    
+
+    <script type="text/javascript" src="../js/post.js"></script>
+
+</body>
+
+</html>
+
+
+<!-- publish link: http://www.andrew.cmu.edu/server/publish.html -->

@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en" id="html">
+
+<head>
+    <meta charset="utf-8">
+    <title>Suhas Kotha</title>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+    </script>
+    <meta name="description" content="The Type Theory of Transformers">
+    <meta name="author" content="Suhas Kotha">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href='https://fonts.googleapis.com/css?family=Quicksand' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="icon" type="image/png" href="../images/dragon_logo.png">
+    <style id="autogen"></style>
+</head>
+
+<body style="max-width: 100%; margin: 0 auto;">
+    <p><a href=../index.html>Home</a></p>
+<div style="max-width: 800px; margin: 0 auto;">
+    <br>
+
+    <h1>The Type Theory of Transformers</h1>
+    <br>
+    <p style="text-align: center;">3/14/2023</p>
+    <br>
+
+    <p>
+        Next-token prediction is critical to the recent success of large language models like GPT-3. Today, we will see why next token prediction is so exciting purely through analyzing the model's function <code>type</code>. In particular, we will see how properties such as prompting and in-context learning can be viewed as currying.
+    </p>
+
+    <h3 style="text-align: left">Transformer Capabilities</h3>
+
+    <p>Functionally, an autoregressive model takes in a series of tokens (think words) and predicts a distribution over the next word. For example, given the input "The cat in the ", a well-trained model might give a \(90\%\) chance that the next word is "hat", \(0.0001\%\) that the next word is pickle, etc. Given this distribution, one can decode an output by passing in a prompt, selecting a next token, appending it to the input, and repeating. In this article, we'll assume the next token is selected greedily by picking the likeliest next token.</p>
+    <br>
+    <p>The model learns this distribution by practicing next-token prediction over the entire internet. The transformer architecture <cite><a href="https://arxiv.org/abs/1706.03762">(Vaswani et al, 2022)</a></cite> with causal masking is known for being easy to scale for this training. People also find that this architecture can compactly express complicated computation, such as parallelism <cite><a href="https://arxiv.org/abs/2210.10749">(Liu et al, 2022)</a></cite>, assembly <cite><a href="https://arxiv.org/abs/2301.13196"> (Giannou et al, 2023)</a></cite>, and linear algebra <cite><a href="https://arxiv.org/abs/2211.15661"> (Akyürek et al, 2022)</a></cite>.
+    </p>
+    <br>
+    <p>
+        As these transformers get better at next-word prediction, some capabilities that were not explicitly targeted qualitatively <i>emerge</i>. For example, if I want the model to give more accurate answers to geology queries, I can prepend "Suppose you are a leading expert in geology" to my question. To get the model to show its work and somehow provide more correct answers, I can apppend "Let's think step by step" to the question <cite><a href="https://arxiv.org/abs/2201.11903">(Wei et al, 2022)</a></cite>. If I want the model to perform a task, such as translation, I can provide a few examples and my question, such as "cat chat apple pomme hello", and get the output, such as "bonjour" <cite><a href="https://arxiv.org/abs/2005.14165">(Brown et al, 2020)</a></cite>.
+    </p>
+    <h3 style="text-align: left">Type Theory Tutorial</h3>
+
+    <p>I'll denote a value <code>x</code> has type <code>t</code> by <code>x : t</code>. The tuple type of
+        <code>t1</code> and <code>t2</code> is type <code>t1 * t2</code>, and a function type from <code>t1</code> to
+        <code>t2</code> is type <code>t1 -> t2</code>.
+    </p>
+    <br>
+    <p>
+        Let's say you have function <code>f : t1 * t2 -> t3</code> which takes in two arguments and produces an output. Sometimes, you will have the first argument available before the second argument and you'd like to <em><b>partially evaluate</b></em> the function on what you have. You can <em><b>curry</b></em> the function <code>f</code> into <code>g : t1 -> (t2 -> t3)</code>. After passing in the first input, you receive a function which can take in the second value to produce the output (shown in the following python code). This allows you to pass in the first input before you have the second input. Its important to note that for every <code>f</code>, there exists an (extensionally) equivalent <code>g</code> and vice versa.
+    </p>
+    <div>
+        <div class="curryblock">
+            <pre>
+    <code style="display: block;">def f(x, y):
+    return x ** x + y</code>
+</pre>
+        </div>
+        <div class="curryblock">
+            <pre>
+<code style="display: block;">def g(x):
+    xpow = x ** x
+    def helper(y):
+        return xpow + y
+    return helper</code></pre>
+        </div>
+    </div>
+    <p>
+        There's no reason to stop at currying two arguments. For example, <code>t1 * t2 * t3 -> t4</code> is isomorphic to <code>t1 -> t2 -> t3 -> t4</code> (for right associative arrows).
+    </p>
+    <br>
+    <p>
+        Beyond allowing further modularity, currying can help stage computation. For example, suppose you need to perform an expensive pre-compute with the first
+        argument. If you didn't curry this, you would have to repeat the pre-compute every time you called <code>f(x, y)</code>. With currying, we can first construct <code>f_with_x = g x</code>. For subsequent calls that have <code>x</code> as the first argument, we can simply call <code>f_with_x y</code> as many times as we'd like.
+    </p>
+    <h3 style="text-align: left">Partially Evaluated Transformers</h3>
+    <p>
+        A typical neural network like a multi-layer perceptron might map from \(\mathbb{R}^d\) to \(\mathbb{R}^k\) and have <code>type MLP = real * real * ... * real -> real * ... * real</code>. Typically, when I have some new information, I have to take my <code>original_NN</code> and train it on the new data to produce a completely new <code>finetuned_NN</code>. This process is costly and annoying; moreover, to share the model, I have to send over the entire function <code>finetuned_NN</code>.
+    </p>
+    <br>
+    <p>
+        However, the specific emergent capabilities we discussed earlier defy this paradigm. We know that a transformer with greedy decoding has <code>type transformer = token list -> token</code>. The killer property of this type is <b><em>partial evaluation</em></b>. Suppose I have new information in <code>prompt : token list</code>. I can write a new function <code>prompted_transformer L = original_transformer (prompt concat L)</code>. When called, this <code>prompted_transformer</code> can utilize this new information without any training or weight updates whatsoever! Moreover, if I want to share <code>prompted_transformer</code> to somebody, I only have to share <code>prompt</code> with somebody who has a copy of <code>original_transformer</code>! This means that the entire execution environment is compactly encoded as a string rather than billions of model weights. The prompting paradigm uniquely enables this "stateless fine-tuning".
+    </p>
+    <h3 style="text-align: left">Infinite Currying??</h3>
+    <p>
+        All of this actually emulates the power of currying. However, there is a very important difference. In typical currying, since tuples have fixed size, you have a fixed number of arguments you can partially evaluate before producing an output. However, with a list as an input, you can successively curry as much information as you'd like, leading to infinite currying?!?
+    </p>
+    <br>
+    <p>
+        In particular, the input list <code>L : token list</code> could be a length 2 tuple, a length 4 tuple, or any other length. So your transformer has to support <code>token * token -> token</code> and <code>token * token * token * token -> token</code> (mathematically shown in the next section). We can curry these functions to get <code>token -> token -> token</code> and <code>token -> (token * token) -> token -> token</code> and a bunch of other whacky in-betweens. Therefore, as soon as you write an interesting function of type <code>token list -> token</code>, you automatically create an infinite collection of curried functions that represent any partial evaluation of any token count.
+    </p>
+    <h3 style="text-align: left">"Math"</h3>
+    <p>
+        Here, I'll make some fun remarks that use
+        type algebra and isomorphisms, which you can learn about from these <a
+            href="https://hypefortypes.github.io/F22/lectures/lec02.pdf">slides</a>. We can see that
+        <code>token list</code> \(\;\cong\;\) <code>unit + token + token * token + ...</code> either by casing on the length of the list or directly from the generating function of the list type. We also know that the type <code>a -> b</code> has cardinality \(|b|^{|a|}\). Putting these together with serious notational abuse,
+    </p>
+    <br>
+    <p>
+        <code>token list -> token</code>
+    </p>
+    <p>
+        \(\cong\;\) <code>token ^ (unit + token + token * token + ...)</code>
+    </p>
+    <p>
+        \(\cong\;\) <code>token ^ unit * token ^ token * token ^ (token * token) * ...</code>
+    </p>
+    <p>
+        \(\cong\;\) <code>(unit -> token) * (token -> token) * (token * token -> token) * ...</code>
+    </p>
+    <br>
+    <p>
+        This spells out the intuition that writing a function from <code>token list -> token</code> is as powerful as
+        writing a function from every tuple length to <code>token</code>!
+    </p>
+    <br>
+    <p>
+        Through seeing the flexibility of the type, we can get a better picture of why its so impressive to get a model with impressive next-token prediction. Thank you for reading, and feel free to reach out with any questions or thoughts!
+    </p>
+    <br>
+
+    <script type="text/javascript" src="../js/post.js"></script>
+</div>
+</body>
+
+</html>
+
+
+<!-- publish link: http://www.andrew.cmu.edu/server/publish.html -->
