@@ -57,9 +57,9 @@
 
     <p>Though it is incredibly obvious these properties are necessary for an interesting threat model, I find that much of the research for generative language models violates violate one or both of these properties. In the following, we walk through the cutting-edge in this area of research. In the end, we identify what I find the most interesting adversarial threats in language models, which happen to coincide with incredibly difficult problems to both formalize and solve. </p>
 
-    <h3 style="text-align: left">Popular Threat Models</h3>
+    <h3>Popular Threat Models</h3>
 
-    <h4 style="text-align: left">Harmful Text Generation</h4>
+    <h4>Harmful Text Generation</h4>
 
     <p>Perhaps the threat model which has garnered the most attention due to its simplicitly and accessibility is generating objectionable content. For example, we consider the formulation in <a href="https://arxiv.org/abs/2303.04381">Jones et al, 2023</a>, where the attacker controls a prompt at limited tokens in pursuit of producing a desired completion. Most language models served by industry try their best to avoid these generations through periodic fine-tuning and Reinforment Learning from Human Feedback (RLHF). </p>
 
@@ -71,7 +71,7 @@
 
     <p>This paper is incredibly important in understanding the weaknesses of safety fine-tuning. However, the threat model itself violates some of the properties we discussed earlier. It most egriously violates property 2: the attacker must have some set of desired elicit behaviors before starting this optimization procedure.  </p>
 
-    <h4 style="text-align: left">Membership Inference</h4>
+    <h4>Membership Inference</h4>
 
     <p>Helcs<br>
 

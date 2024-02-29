@@ -48,6 +48,7 @@ h3 {
 h4 {
     font-style: italic;
     color: rgb(241, 241, 241);
+    text-align: left;
 }
 
 h5 {
@@ -261,6 +262,16 @@ body {
 
 .paper-list li {
     margin-bottom: 10px;
+}
+
+.blog-post {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.blog-post .math {
+    margin-top: 0;
+    overflow-x: scroll;
 }
 
 @media screen and (max-width: 700px) {

@@ -32,7 +32,7 @@
 
     <br>
 
-    <h3 style="text-align: left">Background</h3>
+    <h3>Background</h3>
 
     <p>We start by a brief summary of <a href="https://arxiv.org/abs/2205.11275">Korbak et al, 2022</a>. Suppose we are given a base model \(\pi_0\) which is trained to estimate the log-probability of an arbitrary sequence. Consider a reward model \(r\) that captures the log-likelihood of a sentence \(x\) being "SATisfactory" annealed by regularization strength \(\beta\), represented by \[\log P(\text{SAT} | x) = \frac{r(x)}{\beta}\] 
     
@@ -40,7 +40,7 @@
         
     On the flip side, the RLHF objective is typically fine-tuning \(\pi_0\) with a KL-divergence constraint, which corresponds to maximizing the training objective \[J(\theta) = \mathrm{E}_{x\sim\pi_0}[r(x)] - \beta D_{\text{KL}}(\pi_{\theta}, \pi_0)\] <a href="https://arxiv.org/abs/2205.11275">Korbak et al, 2022</a> proves that minimizing this training objective is equivalent to minimizing \(D_{\text{KL}}(\pi_\theta, \pi^*)\).</p>
 
-    <h3 style="text-align: left">Reconstruction Attack</h3>
+    <h3>Reconstruction Attack</h3>
 
     <p>Consider being given a pre-trained model and a fine-tuned model. We can recover the model's "effective reward model" by observing that at convergence, \[r(x) = \beta\left(\pi^*(x) - \pi_0(x) + C\right)\] Therefore, given blackbox access to a model, under strong assumptions on the model provider doing a good job, we can reconstruct what rewards the RLHF procedure reflects (up to constant factors). Note that if a fancy algorithm is being used, this doesn't reflect the original reward model; it represents the reward model which represents the preferences reflected by the entire fine-tuning procedure. This is arguably better for downstream applications. This can be used in a number of ways. </p>
 

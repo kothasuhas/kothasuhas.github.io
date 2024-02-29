@@ -19,12 +19,12 @@
 
 <body style="max-width: 100%; margin: 0 auto;">
     <p><a href=../index.html>Home</a></p>
-<div style="max-width: 800px; margin: 0 auto;">
-    <br>
+    <div class="blog-post">
+        <br>
 
-    <h1>Elegance of Linear Regression</h1>
+        <h1>Elegance of Linear Regression</h1>
 
-    \(
+        \(
         \def\truedist{{\overline{X}}}
         \def\allset{{\mathcal{X}}}
         \def\truesample{{\overline{x}}}
@@ -35,124 +35,124 @@
         \def\bold#1{{\bf #1}}
         \newcommand{\Pof}[1]{\mathbb{P}\left[{#1}\right]}
         \newcommand{\Eof}[1]{\mathbb{E}\left[{#1}\right]}
-    \)
+        \)
 
-    <br>
-    <p style="text-align: center;">10/19/2023</p>
-    <br>
+        <br>
+        <p style="text-align: center;">10/19/2023</p>
+        <br>
 
-    <p> These days, it seems like every hard problem is being solved via neural networks. When I interned as a quantitative trader, one of my biggest takeaways was the insane modelling power of linear regression; I did not realize how the firm was basically thousands of linear fits in a trench coat. Though there were many more sophisticated modelling techniques, it seemed like most success came from linear regression on features that "correctly" connected the data to the real world. This ran contrary to the well-known fact that neural networks are more expressive and powerful predictors.   
-    </p>
-    <br>
-    <p>When I first started observing this, I thought there wasn't a "fundamental reason" to prefer linear regression and the world would eventually "neural network" away all the problems. However, as I dug deeper, I realized the true value of linear regression and how it was way more important than I thought. This blog post is a collection of fun linear regression properties that make it the dominant choice for the right application and metric. Though any arbitrary subsection might be relatively shallow, the combination of all these properties make linear regression robust at predicting relationships and uniquely capable of understanding data. </p>
+        <p> These days, it seems like every hard problem is being solved via neural networks. When I interned as a quantitative trader, one of my biggest takeaways was the insane modelling power of linear regression; I did not realize how the firm was basically thousands of linear fits in a trench coat. Though there were many more sophisticated modelling techniques, it seemed like most success came from linear regression on features that "correctly" connected the data to the real world. This ran contrary to the well-known fact that neural networks are more expressive and powerful predictors.
+        </p>
+        <br>
+        <p>When I first started observing this, I thought there wasn't a "fundamental reason" to prefer linear regression and the world would eventually "neural network" away all the problems. However, as I dug deeper, I realized the true value of linear regression and how it was way more important than I thought. This blog post is a collection of fun linear regression properties that make it the dominant choice for the right application and metric. Though any arbitrary subsection might be relatively shallow, the combination of all these properties make linear regression robust at predicting relationships and uniquely capable of understanding data. </p>
 
-    <h3 style="text-align: left">Introduction</h3>
+        <h3>Introduction</h3>
 
-    <p> We will consider \(n\) i.i.d. \(d\)-dimensional data points \(x_{i} \in \R^d\) with labels \(y_i \in \R\). We will frequently consider the stacked matrix forms of these quantities as \(X \in \R^{n\times d}\) and \(y \in \R^n\). Usually, the data points are drawn from some covariate distribution and the labels can be determined via an underlying ground-truth function \(y_i = f(x_i)\). This function is typically unknown and is potentially randomized itself. </p>
-    <br>
-    <p>Linear regression implicitly makes the (incredibly reductionist) assumption that the function \(f\) can be well-approximated by a linear function. Linear regression wants to find \(w \in \R^d\) such that \(Xw\) is close to \(y\), which corresponds to</p>
-    <p style="overflow-x: scroll;">\[\arg\min_{w\in\R^d} \left|\left|Xw - y\right|\right|_2^2\]</p>
-    <p>When first presented with this formulation, many of the choices seem quite arbitrary and limiting (why linear? why minimize squared norm? how can i incorporate any more information?). Throughout this post, we will thoroughly motivate these design choices and why its so useful. Hopefully, this post can provide a little insight into what makes linear regression so great.</p>
+        <p> We will consider \(n\) i.i.d. \(d\)-dimensional data points \(x_{i} \in \R^d\) with labels \(y_i \in \R\). We will frequently consider the stacked matrix forms of these quantities as \(X \in \R^{n\times d}\) and \(y \in \R^n\). Usually, the data points are drawn from some covariate distribution and the labels can be determined via an underlying ground-truth function \(y_i = f(x_i)\). This function is typically unknown and is potentially randomized itself. </p>
+        <br>
+        <p>Linear regression implicitly makes the (incredibly reductionist) assumption that the function \(f\) can be well-approximated by a linear function. Linear regression wants to find \(w \in \R^d\) such that \(Xw\) is close to \(y\), which corresponds to</p>
+        <p class="math">\[\arg\min_{w\in\R^d} \left|\left|Xw - y\right|\right|_2^2\]</p>
+        <p>When first presented with this formulation, many of the choices seem quite arbitrary and limiting (why linear? why minimize squared norm? how can i incorporate any more information?). Throughout this post, we will thoroughly motivate these design choices and why its so useful. Hopefully, this post can provide a little insight into what makes linear regression so great.</p>
 
-    <h3 style="text-align: left">Optimization</h3>
+        <h3>Optimization</h3>
 
-    <p>One neat property of linear regression is that it has a closed form solution for a given dataset. To get this closed form, we will set the partial derivative of our objective with respect to \(w\) to \(0\) </p>
-    <p style="overflow-x: scroll;">
-    \[
-    \begin{aligned} 
-    0 &= \frac{\partial}{\partial w}\left( (Xw-y)^{\top}(Xw-y) \right) \\ 
-    0 &= \frac{\partial}{\partial w} \left(y^{\top}y - 2(Xw)^{\top}y + (Xw)^{\top}Xw \right) \\ 
-    0 &= - 2X^{\top}y + 2X^{\top}Xw \\ 
-    w &= (X^{\top}X)^{-1}X^{\top}y \\ 
-    \end{aligned}
-    \]</p>
-    <p>Therefore, when \(X^{\top}X\) is invertible, we have a uniquely defined closed form solution to linear regression! It is worth noting that this matrix is invertible when the columns of \(X\) are linearly independent, or equivalently "no feature can be linearly represented by any other feature". This natural condition simply states that none of our columns are redundant, and is almost surely met for real data with more samples than features.</p>
-    <br>
-    <p>Nobody really implements this closed form since the necessary matrix operations are infeasible for even 10000 data points. For those interested in bonus content, one way to salvage this closed form is via high-dimensional sketching (refer to <a href="http://www.cs.cmu.edu/afs/cs/user/dwoodruf/www/teaching/15859-fall19/weekOne.pdf">David Woodruff's wonderful curriculum</a>). In practice, almost everbody uses gradient descent on the linear regression objective. Since this loss function is convex in the weight parameters, this converges rather quickly (even provably so), making it the de facto choice for implementation. </p>
+        <p>One neat property of linear regression is that it has a closed form solution for a given dataset. To get this closed form, we will set the partial derivative of our objective with respect to \(w\) to \(0\) </p>
+        <p class="math">
+            \[
+            \begin{aligned}
+            0 &= \frac{\partial}{\partial w}\left( (Xw-y)^{\top}(Xw-y) \right) \\
+            0 &= \frac{\partial}{\partial w} \left(y^{\top}y - 2(Xw)^{\top}y + (Xw)^{\top}Xw \right) \\
+            0 &= - 2X^{\top}y + 2X^{\top}Xw \\
+            w &= (X^{\top}X)^{-1}X^{\top}y \\
+            \end{aligned}
+            \]</p>
+        <p>Therefore, when \(X^{\top}X\) is invertible, we have a uniquely defined closed form solution to linear regression! It is worth noting that this matrix is invertible when the columns of \(X\) are linearly independent, or equivalently "no feature can be linearly represented by any other feature". This natural condition simply states that none of our columns are redundant, and is almost surely met for real data with more samples than features.</p>
+        <br>
+        <p>Nobody really implements this closed form since the necessary matrix operations are infeasible for even 10000 data points. For those interested in bonus content, one way to salvage this closed form is via high-dimensional sketching (refer to <a href="http://www.cs.cmu.edu/afs/cs/user/dwoodruf/www/teaching/15859-fall19/weekOne.pdf">David Woodruff's wonderful curriculum</a>). In practice, almost everbody uses gradient descent on the linear regression objective. Since this loss function is convex in the weight parameters, this converges rather quickly (even provably so), making it the de facto choice for implementation. </p>
 
-    <h3 style="text-align: left">Expressing Functions</h3>
+        <h3>Expressing Functions</h3>
 
-    <p>The knee-jerk reaction to linear regression is that the world is non-linear and every relationship can not be captured by a linear function. This is circumvented by the most important aspect of linear regression, feature selection. Before solving the objective for a given dataset, we can manipulate the features to represent quantitites of interest. </p>
-    <br>
-    <p>For example, one immediate limitation is that we can not represent affine functions (linear functions with a non-zero intercept). To remedy this problem, we can make our data \(d+1\)-dimensional by prepending a row of \(1\)'s to the data matrix. We can now express any intercept via the coefficient of the column of \(1\)'s. We can similarly apply such methods to extrapolate to quadratics (add all possible products of features as new features), exponentials (add all exponentiations of features as new features), etc.</p>
-    <br> 
-    <p>In fact, <a href="https://www.wikiwand.com/en/Stone%E2%80%93Weierstrass_theorem">Stone-Weierstrass Theorem</a> tells us that any continuous deterministic \(f\) can be arbitrarily well approximated by a polynomial (think about adding more and more terms of the function's Taylor expansion). Therefore, linear regression can represent any continuous function with sufficient features! Note that this only shows that we can interpolate the training data; we will discuss whether this fits other data from the same distribution later.  </p>
+        <p>The knee-jerk reaction to linear regression is that the world is non-linear and every relationship can not be captured by a linear function. This is circumvented by the most important aspect of linear regression, feature selection. Before solving the objective for a given dataset, we can manipulate the features to represent quantitites of interest. </p>
+        <br>
+        <p>For example, one immediate limitation is that we can not represent affine functions (linear functions with a non-zero intercept). To remedy this problem, we can make our data \(d+1\)-dimensional by prepending a row of \(1\)'s to the data matrix. We can now express any intercept via the coefficient of the column of \(1\)'s. We can similarly apply such methods to extrapolate to quadratics (add all possible products of features as new features), exponentials (add all exponentiations of features as new features), etc.</p>
+        <br>
+        <p>In fact, <a href="https://www.wikiwand.com/en/Stone%E2%80%93Weierstrass_theorem">Stone-Weierstrass Theorem</a> tells us that any continuous deterministic \(f\) can be arbitrarily well approximated by a polynomial (think about adding more and more terms of the function's Taylor expansion). Therefore, linear regression can represent any continuous function with sufficient features! Note that this only shows that we can interpolate the training data; we will discuss whether this fits other data from the same distribution later. </p>
 
-    <h3 style="text-align: left">Incorporating Model Knowledge</h3>
+        <h3>Incorporating Model Knowledge</h3>
 
-    <p>Though we can express any function, it is not clear whether we can incorporate domain knowledge beyond the data points we supply. Luckily, linear regression is amenable to utilizing extra information about the weights or data. </p>
-    
-    <h4 style="text-align: left">Functional Constraints</h4>
+        <p>Though we can express any function, it is not clear whether we can incorporate domain knowledge beyond the data points we supply. Luckily, linear regression is amenable to utilizing extra information about the weights or data. </p>
 
-    <p> To start, let's consider a linear constraint on the weights. For example, if we know that our label is a convex combination of the features, we would like to enforce the fact that the weights sum to \(1\), which naively applying linear regression will not guarantee. In this setting, instead of \(d\) degrees of freedom, we only have \(d-1\) degrees of freedom, since the linear constraint reduces one free variable: the last coefficient is determined for any choice of the first \(d-1\) coefficients. If we index the \(i\)th feature column as \(X_i \in \R^{n}\) and the \(i\)th weight as \(w_i \in \R\) we can rewriting our objective as </p>
-    <p style="overflow-x: scroll;">
-        \[\begin{aligned}\arg\min_{w} & \; \left|\left|\left[(w_1)(X_1) + (w_2)(X_2) + \ldots + (w_{d-1})(X_{d-1}) + (1-w_1 \ldots-w_d)(X_d)\right] - \left[y\right]\right|\right|_2^2 \\
-        = \arg\min_{w} & \; \left|\left|\left[(w_1)(X_1 - X_d) + (w_2)(X_2 - X_d) + \ldots (w_{d-1})(X_{d-1} - X_d)\right] - \left[y - X_d\right]\right|\right|_2^2
-        \end{aligned}\]
-    </p>
-    <p>If we squint hard enough, we notice that after rearrangement, the optimal argument to the original objective can be solved by solving the regression problem with the \(d-1\) features of \(X_i - X_d\) and the labels \(y - X_d\). Therefore, we can enforce some structure through some clever feature engineering.</p>
-    <br>
-    <p>This cool trick doesn't work as nicely for linear inequalities or more sophisticated convex constraints. To remedy this, we can abandon our earlier goal of creating a new linear regression problem, and simply carry out gradient descent while projecting our weight vector to the closest point in our feasible space every step. This algorithm, called Projected Gradient Descent, also provably converges for convex feasible spaces, and will quickly reach our desired solution for more complicated conditions on our input. It is worth noting that trying to enforce such properties on neural networks forms many active areas of research.</p>
+        <h4>Functional Constraints</h4>
 
-    <h4 style="text-align: left">Probabilistic Priors</h4>
+        <p> To start, let's consider a linear constraint on the weights. For example, if we know that our label is a convex combination of the features, we would like to enforce the fact that the weights sum to \(1\), which naively applying linear regression will not guarantee. In this setting, instead of \(d\) degrees of freedom, we only have \(d-1\) degrees of freedom, since the linear constraint reduces one free variable: the last coefficient is determined for any choice of the first \(d-1\) coefficients. If we index the \(i\)th feature column as \(X_i \in \R^{n}\) and the \(i\)th weight as \(w_i \in \R\) we can rewriting our objective as </p>
+        <p class="math">
+            \[\begin{aligned}\arg\min_{w} & \; \left|\left|\left[(w_1)(X_1) + (w_2)(X_2) + \ldots + (w_{d-1})(X_{d-1}) + (1-w_1 \ldots-w_d)(X_d)\right] - \left[y\right]\right|\right|_2^2 \\
+            = \arg\min_{w} & \; \left|\left|\left[(w_1)(X_1 - X_d) + (w_2)(X_2 - X_d) + \ldots (w_{d-1})(X_{d-1} - X_d)\right] - \left[y - X_d\right]\right|\right|_2^2
+            \end{aligned}\]
+        </p>
+        <p>If we squint hard enough, we notice that after rearrangement, the optimal argument to the original objective can be solved by solving the regression problem with the \(d-1\) features of \(X_i - X_d\) and the labels \(y - X_d\). Therefore, we can enforce some structure through some clever feature engineering.</p>
+        <br>
+        <p>This cool trick doesn't work as nicely for linear inequalities or more sophisticated convex constraints. To remedy this, we can abandon our earlier goal of creating a new linear regression problem, and simply carry out gradient descent while projecting our weight vector to the closest point in our feasible space every step. This algorithm, called Projected Gradient Descent, also provably converges for convex feasible spaces, and will quickly reach our desired solution for more complicated conditions on our input. It is worth noting that trying to enforce such properties on neural networks forms many active areas of research.</p>
 
-    <p> What if our knowledge can not be adequately captured by constraints on the weights? Let's consider a synthetic scenario where we assume that the true weight comes from a zero mean Gaussian of variance \(\tau^2I_d\) and we apply some Gaussian noise of variance \(\sigma^2\) to each output. Given these assumptions, we can now define the posterior, or the likelihood of a paremeter given the data. To make the math easier, we will compute this under log without normalizing constants.</p>
+        <h4>Probabilistic Priors</h4>
 
-    <p style="overflow-x: scroll;">
-        \[\begin{aligned}
+        <p> What if our knowledge can not be adequately captured by constraints on the weights? Let's consider a synthetic scenario where we assume that the true weight comes from a zero mean Gaussian of variance \(\tau^2I_d\) and we apply some Gaussian noise of variance \(\sigma^2\) to each output. Given these assumptions, we can now define the posterior, or the likelihood of a paremeter given the data. To make the math easier, we will compute this under log without normalizing constants.</p>
+
+        <p class="math">
+            \[\begin{aligned}
             &\log P(\theta \mid X, y) & \\
             &\propto \log P(X, y \mid \theta) + \log P(\theta) & \text{[Bayes' rule]}\\
             &= -\frac{1}{2\sigma^2}(Xw - y)^{\top}(Xw - y) - \frac{1}{2\tau^2}w^{\top}w & \text{[Gaussian priors]}\\
-            &\propto -\|Xw -y\|_2^2 - \frac{\sigma^2}{\tau^2}\|w\|_2^2 & \text{[rerrange]} \\ 
-        \end{aligned}\]</p>
+            &\propto -\|Xw -y\|_2^2 - \frac{\sigma^2}{\tau^2}\|w\|_2^2 & \text{[rerrange]} \\
+            \end{aligned}\]</p>
 
-    <p>Take a second to see if this feels familiar. Suppose we wanted to find the weight that maximizes the posterior, or the Maximum A Posteriori (MAP) estimate. Following similar linear algebra for the closed form for linear regression, the weight that maximizes the likelihood and minimizes the loss is
-    </p>
-    <p style="overflow-x: scroll;">\[w = \left(X^{\top}X + \frac{\sigma^2}{\tau^2}I_d\right)^{-1}X^{\top}y\]</p>
-    <p>First observe that when we set \(\sigma^2= 0\), we recover the standard linear regression loss and closed form. However, when we know that our estimates are somewhat noisy, we develop a new closed form that seems to penalize the weights for being large, effectively shrinking our solution. This new solution is called ridge regression, and it is incredibly useful to regularize linear regression and prevent overfitting, far beyond this precise synthetic scenario. </p>
+        <p>Take a second to see if this feels familiar. Suppose we wanted to find the weight that maximizes the posterior, or the Maximum A Posteriori (MAP) estimate. Following similar linear algebra for the closed form for linear regression, the weight that maximizes the likelihood and minimizes the loss is
+        </p>
+        <p class="math">\[w = \left(X^{\top}X + \frac{\sigma^2}{\tau^2}I_d\right)^{-1}X^{\top}y\]</p>
+        <p>First observe that when we set \(\sigma^2= 0\), we recover the standard linear regression loss and closed form. However, when we know that our estimates are somewhat noisy, we develop a new closed form that seems to penalize the weights for being large, effectively shrinking our solution. This new solution is called ridge regression, and it is incredibly useful to regularize linear regression and prevent overfitting, far beyond this precise synthetic scenario. </p>
 
-    <br>
+        <br>
 
-    <p>Obviously, this is not the only prior one can use. Under a Laplace prior, we can <a href="https://bjlkeng.io/posts/probabilistic-interpretation-of-regularization/">derive</a> Lasso regression, which promotes sparsity in the weights. If we had the prior that our noise sometimes induces outliers, we could try the noise prior \((1-\epsilon)\mathcal{N}(0, \sigma^2) + \epsilon\mathcal{N}(0, C\sigma^2)\), a simple form of <a href="https://www.wikiwand.com/en/Robust_regression">robust regression</a>. The main takeaway is that with false but representative priors, one can develop natural variants that are better suited for the domain.</p>
+        <p>Obviously, this is not the only prior one can use. Under a Laplace prior, we can <a href="https://bjlkeng.io/posts/probabilistic-interpretation-of-regularization/">derive</a> Lasso regression, which promotes sparsity in the weights. If we had the prior that our noise sometimes induces outliers, we could try the noise prior \((1-\epsilon)\mathcal{N}(0, \sigma^2) + \epsilon\mathcal{N}(0, C\sigma^2)\), a simple form of <a href="https://www.wikiwand.com/en/Robust_regression">robust regression</a>. The main takeaway is that with false but representative priors, one can develop natural variants that are better suited for the domain.</p>
 
-    <h3 style="text-align: left">Robustness</h3>
+        <h3>Robustness</h3>
 
-    <h4 style="text-align: left">Distribution Shift</h4>
+        <h4>Distribution Shift</h4>
 
-    <p>Linear regression manages to do quite well even under a variety of shifts in the data distribution. In the synthetic example from earlier, note that the closed form is <b>independent</b> of the covariate distribution \(x_i\). Neural networks trained to solve this synthetic task are completely brittle to any shift in the distribution of \(x_i\) (<cite><a href="https://arxiv.org/abs/2208.01066">Garg et al, 2022</a></cite>), provably so for low capacity models (<cite><a href="https://arxiv.org/abs/2306.09927">Zhang et al, 2023</a></cite>). Beyond this toy scenario, deep learning in both application and theory is notoriously brittle to many forms of distribution shifts, highlighting a benefit of linear regression (<cite><a href="https://arxiv.org/abs/1906.02530">Ovadia et al, 2019</a></cite>). </p>
+        <p>Linear regression manages to do quite well even under a variety of shifts in the data distribution. In the synthetic example from earlier, note that the closed form is <b>independent</b> of the covariate distribution \(x_i\). Neural networks trained to solve this synthetic task are completely brittle to any shift in the distribution of \(x_i\) (<cite><a href="https://arxiv.org/abs/2208.01066">Garg et al, 2022</a></cite>), provably so for low capacity models (<cite><a href="https://arxiv.org/abs/2306.09927">Zhang et al, 2023</a></cite>). Beyond this toy scenario, deep learning in both application and theory is notoriously brittle to many forms of distribution shifts, highlighting a benefit of linear regression (<cite><a href="https://arxiv.org/abs/1906.02530">Ovadia et al, 2019</a></cite>). </p>
 
-    <h4 style="text-align: left">Adversarial Robustness</h4>
+        <h4>Adversarial Robustness</h4>
 
-    <p>How much is a prediction affected by a small perturbation of the input? Linear regression is quite robust to input perturbations, since the best possible attack for any input is to take a step orthogonal to the weight vector. However, it is well known that since machine learning is non-convex, neural networks are incredibly brittle to tiny perturbations of the input, even after many explicit attempt sot protect against such adversaries. Interestingly, some of the best methods for protecting against such adversaries involve regularizing the model to be linear around inputs (<cite><a href="https://arxiv.org/abs/1907.02610">Qin et al, 2019</a></cite>), effectively outputting a solution closer to linear regression. </p>
+        <p>How much is a prediction affected by a small perturbation of the input? Linear regression is quite robust to input perturbations, since the best possible attack for any input is to take a step orthogonal to the weight vector. However, it is well known that since machine learning is non-convex, neural networks are incredibly brittle to tiny perturbations of the input, even after many explicit attempt sot protect against such adversaries. Interestingly, some of the best methods for protecting against such adversaries involve regularizing the model to be linear around inputs (<cite><a href="https://arxiv.org/abs/1907.02610">Qin et al, 2019</a></cite>), effectively outputting a solution closer to linear regression. </p>
 
-    <h3 style="text-align: left">Interpretability</h3>
+        <h3>Interpretability</h3>
 
-    <p>One of the largest problems with deep learning techniques is that the resulting bag of matrices can not be interpreted. The beauty of linear regression is that the final answer has a simple interpretation: changing the feature \(x_i\) by \(\delta\) changes the prediction by \(w_i\delta\). This helps in two primary ways</p>
+        <p>One of the largest problems with deep learning techniques is that the resulting bag of matrices can not be interpreted. The beauty of linear regression is that the final answer has a simple interpretation: changing the feature \(x_i\) by \(\delta\) changes the prediction by \(w_i\delta\). This helps in two primary ways</p>
 
-    <h4 style="text-align: left">Model Debugging</h4>
+        <h4>Model Debugging</h4>
 
-    <p>One straightforward benefit of intepretability is debugging. Given a final model, we can sanity check the resulting weights to see if they align with priors (i.e. does this feature matter more than that feature, is this weight negative or positive, etc.). This is really important since most failures in data pipelines, unlike traditional software, are silent. Instead of getting a failed test case or a compiler error, you're more likely going to get a bad model, and it will be unclear whether it was due to a data parsing error, algorithmic issue, or simple bug. Being able to analyze the final model parameters is an incredibly under-appreciated method of catching a plethora of these issues that unintepretable neural networks envy.</p>
+        <p>One straightforward benefit of intepretability is debugging. Given a final model, we can sanity check the resulting weights to see if they align with priors (i.e. does this feature matter more than that feature, is this weight negative or positive, etc.). This is really important since most failures in data pipelines, unlike traditional software, are silent. Instead of getting a failed test case or a compiler error, you're more likely going to get a bad model, and it will be unclear whether it was due to a data parsing error, algorithmic issue, or simple bug. Being able to analyze the final model parameters is an incredibly under-appreciated method of catching a plethora of these issues that unintepretable neural networks envy.</p>
 
-    <h4 style="text-align: left">Data Understanding</h4>
+        <h4>Data Understanding</h4>
 
-    <p>Linear regression is fundamentally necessary since it can interpret data in a way that can not be done by techniques optimized for prediction. For starters, it quantifies how different features relate to the data. Important, the coefficient of correlation tells us how correlated the feature is to what we want to predict. Beyond predictive power, this allows us to understand which features are uniquely important in predicting the output via standard evaluation metrics such as the coefficient of correlation. </p>
-    <!-- TODO: R and R^2 -->
+        <p>Linear regression is fundamentally necessary since it can interpret data in a way that can not be done by techniques optimized for prediction. For starters, it quantifies how different features relate to the data. Important, the coefficient of correlation tells us how correlated the feature is to what we want to predict. Beyond predictive power, this allows us to understand which features are uniquely important in predicting the output via standard evaluation metrics such as the coefficient of correlation. </p>
+        <!-- TODO: R and R^2 -->
 
-    <br>
+        <br>
 
-    <p>What happens if we want to understand the influence of a feature "controlling" for another feature, or removing the influence of this feature? One natural way to do so is to run a multiple feature linear regression. Then, the slope on your feature of interest can be interpreted as the slope after removing the effect of the other variables. Note that this slope will likely be different from the slope of the single feature linear regression, and can even be a different sign! Causal inference (great textbook <a href="https://arxiv.org/abs/2305.18793">here</a>) allows one to develop linear regression methods to remove the influence of variables when measuring correlation, increasing your ability to measure influence with statistical guarantees.</p>
-    <!-- causal math -->
+        <p>What happens if we want to understand the influence of a feature "controlling" for another feature, or removing the influence of this feature? One natural way to do so is to run a multiple feature linear regression. Then, the slope on your feature of interest can be interpreted as the slope after removing the effect of the other variables. Note that this slope will likely be different from the slope of the single feature linear regression, and can even be a different sign! Causal inference (great textbook <a href="https://arxiv.org/abs/2305.18793">here</a>) allows one to develop linear regression methods to remove the influence of variables when measuring correlation, increasing your ability to measure influence with statistical guarantees.</p>
+        <!-- causal math -->
 
-    <h3 style="text-align: left">Putting it All Together</h3>
+        <h3>Putting it All Together</h3>
 
-    <p>Obviously, linear regression is not the solution to all problems. It fails embarassingly for some data properties such as <a href="https://www.wikiwand.com/en/Homoscedasticity_and_heteroscedasticity">heteroskedasticity</a>, can not model unknown complex relationships, and loses guarantees outside of convenient priors and assumptions. However, for predictive tasks, one should see linear regression as a simple, efficient, and robust estimator for tasks where it is important to incorporate human understanding of the problem. For analysis tasks, one should see linear regression as an interpretable way to derive insights from data. Though it is much more difficult to get linear regression to work, one can trust it so much more when it does work. Overall, one should not discount the power of linear regression, and many problems would benefit from the correct featurization and linear model :)) </p>
+        <p>Obviously, linear regression is not the solution to all problems. It fails embarassingly for some data properties such as <a href="https://www.wikiwand.com/en/Homoscedasticity_and_heteroscedasticity">heteroskedasticity</a>, can not model unknown complex relationships, and loses guarantees outside of convenient priors and assumptions. However, for predictive tasks, one should see linear regression as a simple, efficient, and robust estimator for tasks where it is important to incorporate human understanding of the problem. For analysis tasks, one should see linear regression as an interpretable way to derive insights from data. Though it is much more difficult to get linear regression to work, one can trust it so much more when it does work. Overall, one should not discount the power of linear regression, and many problems would benefit from the correct featurization and linear model :)) </p>
 
-    <br>
-    
-    <p>Thank you for reading, and feel free to reach out with any questions or thoughts!</p>
+        <br>
 
-    <script type="text/javascript" src="../js/post.js"></script>
-</div>
+        <p>Thank you for reading, and feel free to reach out with any questions or thoughts!</p>
+
+        <script type="text/javascript" src="../js/post.js"></script>
+    </div>
 </body>
 
 </html>
