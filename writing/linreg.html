@@ -103,7 +103,7 @@
             &\log P(\theta \mid X, y) & \\
             &\propto \log P(X, y \mid \theta) + \log P(\theta) & \text{[Bayes' rule]}\\
             &= -\frac{1}{2\sigma^2}(Xw - y)^{\top}(Xw - y) - \frac{1}{2\tau^2}w^{\top}w & \text{[Gaussian priors]}\\
-            &\propto -||Xw -y||_2^2 - \frac{\sigma^2}{\tau^2}||w||_2^2 & \text{[rerrange]} \\ 
+            &\propto -\|Xw -y\|_2^2 - \frac{\sigma^2}{\tau^2}\|w\|_2^2 & \text{[rerrange]} \\ 
         \end{aligned}\]</p>
 
     <p>Take a second to see if this feels familiar. Suppose we wanted to find the weight that maximizes the posterior, or the Maximum A Posteriori (MAP) estimate. Following similar linear algebra for the closed form for linear regression, the weight that maximizes the likelihood and minimizes the loss is

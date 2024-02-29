@@ -108,7 +108,7 @@
 
     <p style="overflow-x: scroll;">
     \begin{aligned}
-    & \min_{F\in \R^{n\times k}} ||\normadj - FF^{\top}||_F^2  & \text{[low-rank approx]}\\
+    & \min_{F\in \R^{n\times k}} \|\normadj - FF^{\top}\|_F^2  & \text{[low-rank approx]}\\
     &= \min_{f : \allset \to \R^k} \sum_{x_1, x_2 \in \allset} \left(\frac{w_{x_1x_2}}{\sqrt{w_{x_1}w_{x_2}}} - (w_{x_1}^{1/2}f(x_1))^{\top}(w_{x_2}^{1/2}f(x_2))\right)^2 & \text{[Frobenius norm]}\\
     &= \min_{f : \allset \to \R^k} \sum_{x_1, x_2 \in \allset} \frac{w_{x_1x_2}^2}{w_{x_1}w_{x_2}} - 2w_{x_1x_2}f(x_1)^{\top}f(x_2) + w_{x_1}w_{x_2} \left(f(x_1)^{\top}f(x_2)\right) & \text{[expand terms]}\\
     &= \min_{f : \allset \to \R^k} \sum_{x_1, x_2 \in \allset} - 2w_{x_1x_2}f(x_1)^{\top}f(x_2) + \sum_{x_1, x_2 \in \allset} w_{x_1}w_{x_2} \left(f(x_1)^{\top}f(x_2)\right) & \text{[remove constant]}\\
@@ -152,7 +152,7 @@
 
     <p>It's important to note that even though this loss function resembles the loss function in practice, its slightly different. What's amazing is that using this more theoretically principled function makes self-supervised learning easier! Though this paper doesn't push numbers significantly past the state of the art, they find that this new loss allows them to drop a lot of previous heuristics such as large batch sizes, momentum encoders, and stop-gradient methods. This is really exciting since it shows that the mathematical analysis offers value to the immensely useful practice of self-supervised learning!</p>
 
-    <h3 style="text-align: left">What's left to understand here? (My thoughts)</h3>
+    <h3>What's left to understand here? (My thoughts)</h3>
 
     <p>This phenomenal paper provides a compelling explanation of self-supervised learning, almost making it feel simple. Here are my thoughts on some interesting directions following this paper, some of which have been subsequently explored, and others which will require some brave researchers to solve :))</p>
 

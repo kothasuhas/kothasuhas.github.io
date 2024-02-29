@@ -42,6 +42,7 @@ a {
 
 h3 {
     color: rgb(241, 241, 241);
+    text-align: left;
 }
 
 h4 {
@@ -57,7 +58,9 @@ h5 {
     display: inline-block;
 }
 
-a:hover, a:focus, a:active {
+a:hover,
+a:focus,
+a:active {
     color: rgb(255, 255, 255);
 }
 
@@ -88,6 +91,8 @@ p {
     color: rgb(230, 230, 230);
     line-height: 30px;
     padding-bottom: 10px;
+    padding: 0;
+    margin: 0;
 }
 
 code {
@@ -99,7 +104,7 @@ code {
     padding-bottom: 10px;
 }
 
-figcaption{
+figcaption {
     font-size: 0.8em;
     word-wrap: break-word;
     color: rgb(230, 230, 230);
@@ -117,16 +122,6 @@ li {
     color: rgb(230, 230, 230);
 }
 
-/* .bulletp {
-    margin-left: 30px;
-    padding-bottom: 1.2em;
-} */
-
-p {
-    padding: 0;
-    margin: 0;
-}
-
 #about p:first-child {
     margin-top: 0;
 }
@@ -140,7 +135,11 @@ p {
     color: #fff;
 }
 
-.inverted h1, .inverted p, .inverted a:hover, .inverted a:focus, .inverted a:active  {
+.inverted h1,
+.inverted p,
+.inverted a:hover,
+.inverted a:focus,
+.inverted a:active {
     color: #fff;
 }
 
@@ -159,16 +158,21 @@ p {
 
 /* The Modal (background) */
 .modal {
-    display: none; /* Hidden by default */
-    position: fixed; /* Stay in place */
-    z-index: 10; /* Sit on top */
+    display: none;
+    /* Hidden by default */
+    position: fixed;
+    /* Stay in place */
+    z-index: 10;
+    /* Sit on top */
     bottom: 0;
     left: 0;
     right: 0;
-    width: 100%; /* Full width */
-    overflow: auto; /* Enable scroll if needed */
+    width: 100%;
+    /* Full width */
+    overflow: auto;
+    /* Enable scroll if needed */
     background-color: #fefefe;
-    box-shadow: 0px 0px 5px 1px rgba(0,0,0,0.3);
+    box-shadow: 0px 0px 5px 1px rgba(0, 0, 0, 0.3);
     max-height: 64px;
 }
 
@@ -193,13 +197,23 @@ p {
 
 /* Add Animation */
 @keyframes slideIn {
-    from {bottom: -300px;}
-    to {bottom: 0;}
+    from {
+        bottom: -300px;
+    }
+
+    to {
+        bottom: 0;
+    }
 }
 
 @keyframes slideOut {
-    from {bottom: 0px;}
-    to {bottom: -300px;}
+    from {
+        bottom: 0px;
+    }
+
+    to {
+        bottom: -300px;
+    }
 }
 
 .color-circle {
@@ -212,22 +226,6 @@ p {
     border-radius: 50%;
     cursor: pointer;
     scroll-snap-align: start;
-}
-
-@media screen and (max-width: 600px) {
-body {
-    margin: 0 auto;
-    border-radius: 0;
-    min-height: 100%;
-}
-
-.highlight {
-    max-width: 100%;
-    display: block;
-}
-#cpick {
-    display: none;
-}
 }
 
 .column {
@@ -247,7 +245,7 @@ body {
 
 .right {
     width: 25%;
-    padding-left:30px
+    padding-left: 30px
 }
 
 .curryblock {
@@ -257,7 +255,30 @@ body {
     margin-right: 15%;
 }
 
+body {
+    font-family: "Palatino Linotype", "Book Antiqua", Palatino, serif;
+}
+
+.paper-list li {
+    margin-bottom: 10px;
+}
+
 @media screen and (max-width: 700px) {
+    body {
+        margin: 0 auto;
+        border-radius: 0;
+        min-height: 100%;
+    }
+
+    .highlight {
+        max-width: 100%;
+        display: block;
+    }
+
+    #cpick {
+        display: none;
+    }
+
     .column {
         width: 100%;
     }
@@ -273,14 +294,15 @@ body {
 
     p {
         text-align: left;
-        font-size: 0.8em;
-        word-wrap: break-word;
-        color: rgb(230, 230, 230);
-        line-height: 30px;
-        padding-bottom: 10px;
+    }
+
+    .pfp {
+        width: 60%;
+        display: block;
+        margin: 0 auto;
     }
 }
 
-body {
-    font-family: "Palatino Linotype", "Book Antiqua", Palatino, serif;
-}
+/* @media screen and (max-width: 700px) {
+    
+} */
