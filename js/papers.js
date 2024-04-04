@@ -11,6 +11,13 @@ function generatePaperHTML(title, authors, conference, link, codeLink) {
 // make a list of papers
 let papers = [
     generatePaperHTML(
+        "Jailbreaking is Best Solved by Definition",
+        ["Taeyoun Kim<sup>*</sup>", "Suhas Kotha<sup>*</sup>", "Aditi Raghunathan"],
+        "Preprint 2024",
+        "https://arxiv.org/abs/2403.14725",
+        "https://github.com/kothasuhas/purple-problem"
+    ),
+    generatePaperHTML(
         "Repetition Improves Language Model Embeddings", 
         ["Jacob Mitchell Springer", "Suhas Kotha", "Daniel Fried", "Graham Neubig", "Aditi Raghunathan"], 
         "Preprint 2024", 
@@ -36,6 +43,6 @@ let papers = [
 for (let i = 0; i < papers.length; i++) {
     document.getElementById('papers').innerHTML += papers[i];
     if (i < papers.length - 1) {
-        document.getElementById('papers').innerHTML += '<br>';
+        document.getElementById('papers').innerHTML += ' <br> ';
     }
 }
