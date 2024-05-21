@@ -256,12 +256,18 @@ li {
     margin-right: 15%;
 }
 
-body {
+body, button {
     font-family: "Palatino Linotype", "Book Antiqua", Palatino, serif;
 }
 
-.paper-list li {
-    margin-bottom: 10px;
+.post-list {
+    margin: 0px;
+}
+
+.post-list li {
+    /* margin-bottom: 10px; */
+    margin-left: 0px;
+    /* margin: 0px; */
 }
 
 .blog-post {
@@ -272,6 +278,18 @@ body {
 .blog-post .math {
     margin-top: 0;
     overflow-x: scroll;
+}
+
+button {
+    padding: 5px;
+    color: white;
+    background-color: gray;
+    border: none;
+    outline: none;
+}
+
+.active {
+    background-color: #a03cfc;
 }
 
 @media screen and (max-width: 700px) {

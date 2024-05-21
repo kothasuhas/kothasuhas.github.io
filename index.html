@@ -20,27 +20,43 @@
             <br>
             <section id="highlights">
                 <p style="text-align: left;">
-                    Hello! I'm a senior studying CS at CMU, advised by <a href="https://www.cs.cmu.edu/~aditirag/">Aditi Raghunathan</a>. I am currently researching how to reliably adapt pretrained models for downstream tasks. In the past, I was a quantitative trading intern at Jane Street and a research intern at NASA SpaceML.
+                    Hello! I am interested in improving machine learning by understanding why it fails. I studied CS at CMU, fortunate to be advised by <a href="https://www.cs.cmu.edu/~aditirag/">Aditi Raghunathan</a>. I am starting my PhD at Stanford this fall.
                 </p>
             </section>
-            <section id="papers">
-                <h3>Papers</h3>
-                <!-- papers generated from papers.js -->
+
+            <section>
+                <h3>Papers <button type="button" id="trueButton">Selected</button> <button type="button" id="falseButton">All</button> </h3>
+                <div id="papers">
+                    <!-- papers generated from papers.js -->
+                </div>
             </section>
-            <h3>Writing</h3>
-                <p>A collection of random experiments, thoughts, and introductions.</p>
-                <br>
-                <ul style="padding: 0; margin: 0" class="paper-list">
-                    <li><a href="writing/collectives.html">Synthesizing Optimal Parallel Collectives via SAT</a></li>
-                    <li><a href="https://github.com/kothasuhas/predicting-emergence">Challenge: Emergence as Prediction Across Scale</a></li>
-                    <li><a href="writing/linreg.html">Elegance of Linear Regression</a></li>
-                    <li><a href="writing/spectral-contrastive.html">Paper Analysis: Provable Guarantees for Self-Supervised Deep Learning with Spectral Contrastive Loss</a></li>
-                    <li><a href="writing/rlhf-intro.html">Understanding Reinforcement Learning from Human Feedback</a></li>
-                    <li><a href="writing/convexgeo.html">Convex Geometry for Computers</a></li>
-                    <li><a href="writing/curriedtransformers.html">The Type Theory of Transformers</a></li>
-                    <li><a href="writing/isoperimetry.html">Paper Analysis: A Universal Law of Robustness via Isoperimetry</a></li>
-                </ul>
-                <br>
+            <h3>Content</h3>
+            <p>Fresh work/ideas</p>
+            <ul class="post-list">
+                <li><a href="writing/discrete-speedup.html">💜 Lower Diversity Accelerates Convergence for Regression</a></li>
+                <li><a href="writing/collectives.html">💜 Synthesizing Optimal Parallel Collectives via SAT</a></li>
+                <li><a href="writing/curriedtransformers.html">The Type Theory of Transformers</a></li>
+            </ul>
+            <br>
+            <p>Challenges</p>
+            <ul class="post-list">
+                <li><a href="https://github.com/kothasuhas/lm-data-challenge">Language Data Ordering and Filtering</a></li>
+                <li><a href="https://github.com/kothasuhas/predicting-emergence">💜 Emergence as Prediction Across Scale</a></li>
+            </ul>
+            <br>
+            <p>Paper Analyses</p>
+            <ul class="post-list">
+                <li><a href="writing/spectral-contrastive.html">Provable Guarantees for Self-Supervised Deep Learning with Spectral Contrastive Loss</a></li>
+                <li><a href="writing/isoperimetry.html">A Universal Law of Robustness via Isoperimetry</a></li>
+            </ul>
+            <br>
+            <p>Introductions</p>
+            <ul class="post-list">
+                <li><a href="writing/linreg.html">💜 Elegance of Linear Regression</a></li>
+                <li><a href="writing/rlhf-intro.html">Understanding Reinforcement Learning from Human Feedback</a></li>
+                <li><a href="writing/convexgeo.html">Convex Geometry for Computers</a></li>
+            </ul>
+            <br>
         </div>
         <div class="column right">
             <img src="images/Suhas_Kotha.jpg" style="max-width: 100%; height: auto;" class="pfp">
@@ -50,7 +66,8 @@
         </div>
     </div>
     <script type="text/javascript" src="js/post.js"></script>
-    <script type="text/javascript" src="js/papers.js"></script>
+    <script type="text/javascript" src="js/papers.js?v=<?php echo rand(); ?>"></script>
+    <script type="text/javascript" src="js/button.js?v=<?php echo rand(); ?>"></script>
 </body>
 
 </html>

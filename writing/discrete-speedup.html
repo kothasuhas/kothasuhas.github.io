@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en" id="html">
+
+<head>
+    <meta charset="utf-8">
+    <title>Suhas Kotha</title>
+    <!-- <script src="jquery-3.6.3.min.js"></script> -->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script type="text/x-mathjax-config">
+        MathJax.Hub.Config({
+          tex2jax: {
+            inlineMath: [['$', '$'], ['\\(', '\\)']],
+            displayMath: [['$$', '$$'], ['\\[', '\\]']],
+            processEscapes: true
+          }
+        });
+    </script>
+    <script type="text/javascript" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-MML-AM_CHTML"></script>
+    </script>
+    <meta name="description" content="Lower Diversity Accelerates Convergence for Regression">
+    <meta name="author" content="Suhas Kotha">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href='https://fonts.googleapis.com/css?family=Quicksand' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" href="../css/style.css?v=<?php echo rand(); ?>">
+    <link rel="icon" type="image/png" href="../images/dragon_logo.png">
+    <style id="autogen"></style>
+</head>
+
+<body style="max-width: 100%; margin: 0 auto;">
+    <p><a href=../index.html>Home</a></p>
+    <div class="blog-post">
+        <br>
+
+        <h1>Lower Diversity Accelerates Convergence for Regression</h1>
+
+        \(
+        \def\truedist{{\overline{X}}}
+        \def\allset{{\mathcal{X}}}
+        \def\truesample{{\overline{x}}}
+        \def\augdist{\mathcal{A}}
+        \def\R{\mathbb{R}}
+        \def\normadj{\overline{A}}
+        \def\pca{F^*}
+        \def\bold#1{{\bf #1}}
+        \newcommand{\Pof}[1]{\mathbb{P}\left[{#1}\right]}
+        \newcommand{\Eof}[1]{\mathbb{E}\left[{#1}\right]}
+        \newcommand{\xquery}{x_{\text{query}}}
+        \newcommand{\yquery}{y_{\text{query}}}
+        \newcommand{\ypred}{\hat{y}}
+        \newcommand{\prompt}{P}
+        \newcommand{\functionfamily}{\mathcal{F}}
+        \newcommand{\promptfamily}{\mathcal{P}}
+        \newcommand{\predloss}{\mathcal{L}}
+        \newcommand{\Normal}{\mathcal{N}}
+        \newcommand{\normalpdf}[1]{\varphi\p{#1}}  
+        \newcommand{\prob}{{\mathbb{P}}}
+        \newcommand{\identityd}{I_d}
+        \DeclareMathOperator*{\argmax}{arg\,max}
+        \DeclareMathOperator*{\argmin}{arg\,min}
+        \newcommand\bSigma{{\mbox{\boldmath$\Sigma$}}}
+        \newcommand{\wcont}{w_{\text{cont}}}
+        \newcommand{\wdisc}{w_{\text{disc}}}
+        \newcommand{\wcontopt}{w^*_{\infty}}
+        \newcommand\wdiscopt[1]{w^*_{{#1}}}
+        \newcommand{\wmixopt}{w^*_{\text{mix}}}
+        \newcommand{\weightdist}{\mathcal{D}}
+        \newcommand{\dist}[1]{\weightdist_{#1}}
+        \newcommand{\contdist}{\dist{\infty}}
+        \newcommand\discretedist[1]{\dist{{#1}}}
+        \newcommand{\finetunedist}{\dist{\text{finetune}}}
+        \newcommand{\finetuneprob}{p_{\text{finetune}}\p{X, y}}
+        \newcommand{\numsamples}{T}
+        \newcommand{\mixturedist}{\dist{\text{mix}}}
+        \newcommand{\sequencesamples}{x_1, y_1, \ldots, x_k, y_k}
+        \newcommand{\trueposterior}{g(X,y)}
+        \newcommand{\modelposterior}{g_{\theta}(X,y)}
+        \newcommand{\modelscaledposterior}{g_{\theta}(X,\gamma y)}
+        \newcommand{\promptstrat}{s}
+        \newcommand\pb[1]{{\left[ #1 \right]}}
+        \newcommand\inner[2]{{\left< #1, #2 \right>}} 
+        \newcommand{\E}{{\mathbb{E}}}
+        \newcommand\p[1]{{\left( #1 \right)}}
+        \newcommand\sW{{\mathcal{W}}}
+        \)
+
+        <br>
+        <p style="text-align: center;">5/20/2024</p>
+        <br>
+
+        <p> We will consider training transformers to perform linear regression (originally considered by the visionary work of <cite><a href="https://arxiv.org/abs/2208.01066">Garg et al, 2022</a></cite>). For Gaussian data, it is Bayes-optimal to perform ridge regression. However, we find that making the data <i>less</i> diverse can find ridge regression before eventually converging to the Bayes-optimal solution for the less diverse data. Magically, the model learns ridge regression much much faster training on the less diverse data compared to the full Gaussian data. This is perhaps the most surprising empirical phenomenon I have ever encountered, and I have very little intuition for why this happens ever since I found it fifteen months ago (documented in Appendix C.3 of <cite><a href="https://arxiv.org/abs/2309.10105">Kotha et al, 2023</a></cite>). I would like to share this magic and would be especially grateful if somebody can help me understand why it happens.</p>
+
+        <h3>Setup</h3>
+
+        <h4>Data format</h4>
+
+        <p>(This setup closely follows Section 2 of the aforementioned paper). We are interested in learning functions \(f \in \functionfamily\) that map inputs \(x \in \mathbb{R}^d\) to outputs \(y \in \mathbb{R}\). Inspired by previous works, we focus on linear regression for noisy data, where every function is given by \(f_w\colon x \mapsto \inner{w}{x}\) for a fixed \(w \in \R^d\). We are given a set of samples \(S\) of variable length \(k\) from \(0\) to maximum length \(40\) such that </p>
+        <p class="math">\begin{align}
+            S = \left\{(x_1, y_1), \ldots, (x_k, y_k)\right\},
+            \label{eq:samples}
+        \end{align}</p>
+        <p>with \(y_i = f_w(x_i) + \epsilon_i\) and \(\epsilon_i \sim \Normal(0, \sigma^2)\). From this, a model estimates the output \(\yquery\) for a given input \(\xquery\). We will refer to an instance from our function class $f_w$ as a <i>task</i>, and when it is clear from context, we will refer to tasks by the associated weight vector $w$. In this section, all inputs will be sampled from the normal distribution via $x_i \sim \Normal(0, \identityd)$.</p>
+        
+        <h4>Training an auto-regressive model</h4>
+
+        <p>We consider auto-regressive models $T_\theta$ that take in a sequence of tokens, each in $\R^d$, to produce a real-valued output. For samples $S$ generated under $w$, we feed $T_{\theta}$ the <i>prompt</i> $\pb{\sequencesamples, \xquery}$ (every $1$-dimensional token is right-padded with $d-1$ zeroes) and take its output as a prediction of $\yquery$. When appropriate, we will refer to the $x_i$'s in the prompt as $X \in \R^{k\times d}$ and the $y_i$'s as $y \in \R^{k}$. We train and evaluate $T_\theta$ with respect to a weight distribution $\weightdist$ via the quadratic loss</p>
+        <p class="math">\begin{align}
+        \label{eq:in-context}
+            \predloss(\theta, \weightdist) = \sum_{k=0}^{40}
+            \underset{
+            \substack{
+            x_i \sim \Normal(0, \identityd) \\
+            w \sim \weightdist \\
+            \epsilon_i \sim \Normal(0, \sigma^2)
+            }
+            }{\E}\pb{\p{T_{\theta}\p{\pb{\sequencesamples, \xquery}} - \yquery}^2}.
+        \end{align}</p>
+        <p>by sampling a fresh batch of $x, w, \epsilon$ in each step. Under the quadratic loss, the optimal output is </p>
+        <p class="math">$\E\pb{f_{w}(\xquery) + \epsilon \mid X, y} = \langle \E\pb{w \mid X, y}, \xquery \rangle$</p> 
+        <p>For our model, we use a 22.4 million paramater GPT-2 style transformer. For more experimental details, refer to Appendix C.8 of the original paper.</p>
+
+        <h3>Task Distributions</h3>
+
+        <h4>Gaussian Task Distribution is solved by Ridge Regression</h4>
+        <p>Prior work assumes weights are sampled from a Gaussian prior \(\contdist = \Normal(0, \tau^2\identityd)\), which we will refer to as the "continuous distribution". In this case, the Bayes optimal predictor performs <i>ridge regression</i>:</p>
+        <p class="math">\begin{align}\wcontopt(X, y) = \E\pb{w \mid X, y} = \p{X^{\top} X + \frac{\sigma^2}{\tau^2}\identityd}^{-1}X^{\top}y.\end{align}</p>
+        <p> As noted in prior work, for most values of $\tau, \sigma$, a converged transformer's predictions closely match the Bayes optimal predictor when evaluated on weight vectors from the same Gaussian prior. We replicate this for $\tau = 1$ in Figure 1, left.</p>
+
+        <h4>Discrete Task Distribution is solved by Discrete Regression</h4>
+        <p>We now consider training over a "fixed" set of weights with the distribution $\discretedist{N}$ sampling $w$ uniformly from $\sW_{N} = \{w_1, \ldots, w_N\}$. We refer to this as the "discrete distribution". With this new prior, ridge regression is no longer optimal. The Bayes optimal estimator for $\discretedist{N}$ is:</p>
+        <p class="math">\begin{align} \wdiscopt{N}(X, y) &= \frac{\sum_{w \in \sW_N}w \normalpdf{(y - Xw)/\sigma}}{\sum_{w \in \sW_N}\normalpdf{(y - Xw)/\sigma}}, \end{align}</p>
+        <p>where $\normalpdf{\cdot}$ is the density of the standard multivariate normal distribution (derivation in Appendix B.1). We refer to this estimator as <i>discrete regression</i>.</p>
+
+        <br>
+        
+        <p>After training for sufficiently many steps on $\discretedist{64}$, we find that the Transformer achieves the same loss as the Bayes-optimal estimator $\wdiscopt{64}$, clearly outperforming ridge regression on the fixed set of weights (Figure 1, right).</p>
+
+        <figure>
+            <img src="../images/discrete-speedup/contdist_training.png" style="max-width: 45%; height: auto;"><img src="../images/discrete-speedup/discretedist_training.png" style="max-width: 45%; height: auto;">
+            <p>
+            <figcaption>Figure 1: We compare a model trained on $\contdist$ against the optimal algorithm of ridge regression (left) and a model trained on $\discretedist{64}$ against the optimal algorithm of discrete regression (right). In both cases, the transformer matches Bayes-optimal.</figcaption>
+            </p>
+        </figure>
+
+        <h3>The Magic</h3>
+
+        <p>So far, we've seen how training for long enough converges to optimal solution. However, the magic comes from the training trajectory. Though training on the discrete distribution eventually converges to discrete regression, we actually learn ridge regression!! This can be seen in Figure 2. What's even more magical is that we reach ridge regression much much faster by training on the discrete distribution compared to the continuous distribution. It is incredibly surprising that training on a <i>less</i> diverse data distribution improves the speed of convergence to the true generalizing solution. </p>
+
+        <figure>
+            <img src="../images/discrete-speedup/continuous_vs_discrete.png" style="max-width: 100%; height: auto;">
+            <p>
+            <figcaption>Figure 2: Training over the discrete distribution first
+                achieves good continuous loss (blue, left). Later in training, the model swaps this out to achieve the Bayes optimal solution of discrete regression. This happens much faster than training on the continuous distribution (purple, left). </figcaption>
+            </p>
+        </figure>
+
+        <h4>Effect of Task Count</h4>
+
+        <p>Obviously, this depends on the number of tasks, which we plot in Figure 3. If there are too few tasks (e.g. 32), then the model never learns ridge regression along the way to discrete regression. If there are too many tasks (e.g. 4096), then its effectively equivalent to training on the full gaussian distribution and there is no increase in speed of convergence. However, our experiments reveal a sweet spot in the middle where the model quickly learns righe regression before losing it for discrete regression. There is some variance for running over a fixed task count, but I find that this trend holds robustly over many reruns. </p>
+
+        <figure>
+            <img src="../images/discrete-speedup/discrete_varying_task.png" style="max-width: 80%; height: auto;">
+            <p>
+            <figcaption>Figure 3: We train the model on discrete distributions for tasks counts raning from 32 to 4096. Too few tasks leads to immediate discrete regression, too many tasks leads to the same trajectory as training on continuous, and there is a surprising sweet spot where the model rapidly approaches ridge regression. </figcaption>
+            </p>
+        </figure>
+
+        <h4>Next Steps</h4>
+
+        <p>As of writing this (May 2024), I have very little understanding as to why this phenomenon occurs. I can believe that ridge regression is encountered along the way due to a simplicity bias towards the simpler solution of ridge regression. However, I have absolutely zero understanding of why the training is so much faster, so robustly across many experiments. To better understand, I first want to see how far I can simplify the setting. Is this true for mean estimation instead of linear regression? Is this true for different architectures and smaller models? This will hopefully uncover what factors are important for this phenomenon. It would be awesome to build a fine-grained understanding of how diversity affects the speed and quality of training, especially in a way that generalizes to real training.</p>
+
+        <br>
+ 
+        <p>Thank you for reading, and feel free to reach out with any questions or thoughts!</p>
+
+        <script type="text/javascript" src="../js/post.js"></script>
+    </div>
+</body>
+
+</html>
+
+
+<!-- publish link: http://www.andrew.cmu.edu/server/publish.html -->
