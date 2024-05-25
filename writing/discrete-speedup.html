@@ -114,9 +114,9 @@
             }
             }{\E}\pb{\p{T_{\theta}\p{\pb{\sequencesamples, \xquery}} - \yquery}^2}.
         \end{align}</p>
-        <p>by sampling a fresh batch of $x, w, \epsilon$ in each step. Under the quadratic loss, the optimal output is </p>
-        <p class="math">$\E\pb{f_{w}(\xquery) + \epsilon \mid X, y} = \langle \E\pb{w \mid X, y}, \xquery \rangle$</p> 
-        <p>For our model, we use a 22.4 million paramater GPT-2 style transformer. For more experimental details, refer to Appendix C.8 of the original paper.</p>
+        <p>by sampling a fresh batch of $x, w, \epsilon$ each step. Under quadratic loss, the optimal output is </p>
+        <p class="math">\begin{align}\E\pb{f_{w}(\xquery) + \epsilon \mid X, y} = \langle \E\pb{w \mid X, y}, \xquery \rangle\end{align}</p> 
+        <p>Therefore, it suffices to recover the expectation of the weight's posterior distribution over the data. For our model, we use a 22.4 million paramater GPT-2 style transformer. For more experimental details, refer to Appendix C.8 of the original paper.</p>
 
         <h3>Task Distributions</h3>
 

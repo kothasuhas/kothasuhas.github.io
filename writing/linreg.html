@@ -68,7 +68,7 @@
             \]</p>
         <p>Therefore, when \(X^{\top}X\) is invertible, we have a uniquely defined closed form solution to linear regression! It is worth noting that this matrix is invertible when the columns of \(X\) are linearly independent, or equivalently "no feature can be linearly represented by any other feature". This natural condition simply states that none of our columns are redundant, and is almost surely met for real data with more samples than features.</p>
         <br>
-        <p>Nobody really implements this closed form since the necessary matrix operations are infeasible for even 10000 data points. For those interested in bonus content, one way to salvage this closed form is via high-dimensional sketching (refer to <a href="http://www.cs.cmu.edu/afs/cs/user/dwoodruf/www/teaching/15859-fall19/weekOne.pdf">David Woodruff's wonderful curriculum</a>). In practice, almost everbody uses gradient descent on the linear regression objective. Since this loss function is convex in the weight parameters, this converges rather quickly (even provably so), making it the de facto choice for implementation. </p>
+        <p>Nobody really implements this closed form since the necessary matrix operations are infeasible for even 10000 data points. For those interested in bonus content, one way to salvage this closed form is via high-dimensional sketching (refer to <a href="http://www.cs.cmu.edu/afs/cs/user/dwoodruf/www/teaching/15859-fall19/weekOne.pdf">David Woodruff's wonderful curriculum</a>). In practice, almost everbody uses gradient descent on the linear regression objective. Since this objective is convex in the weight parameters, this converges rather quickly (even provably so), making it the de facto choice for implementation. </p>
 
         <h3>Expressing Functions</h3>
 
@@ -100,16 +100,16 @@
 
         <p class="math">
             \[\begin{aligned}
-            &\log P(\theta \mid X, y) & \\
-            &\propto \log P(X, y \mid \theta) + \log P(\theta) & \text{[Bayes' rule]}\\
+            &\log P(w \mid X, y) & \\
+            &\propto \log P(X, y \mid w) + \log P(w) & \text{[Bayes' rule]}\\
             &= -\frac{1}{2\sigma^2}(Xw - y)^{\top}(Xw - y) - \frac{1}{2\tau^2}w^{\top}w & \text{[Gaussian priors]}\\
             &\propto -\|Xw -y\|_2^2 - \frac{\sigma^2}{\tau^2}\|w\|_2^2 & \text{[rerrange]} \\
             \end{aligned}\]</p>
 
-        <p>Take a second to see if this feels familiar. Suppose we wanted to find the weight that maximizes the posterior, or the Maximum A Posteriori (MAP) estimate. Following similar linear algebra for the closed form for linear regression, the weight that maximizes the likelihood and minimizes the loss is
+        <p>Take a second to see if this feels familiar. We note that for this specific choice of prior, the posterior is also Gaussian (consequence of <a href="https://www.wikiwand.com/en/Conjugate_prior"> conjugate priors</a>). This means that the mode of the posterior is the same as its mean. We will now derive the mode, as it is mathematically simpler. Following similar linear algebra for the closed form for linear regression, the weight that maximizes the likelihood is
         </p>
         <p class="math">\[w = \left(X^{\top}X + \frac{\sigma^2}{\tau^2}I_d\right)^{-1}X^{\top}y\]</p>
-        <p>First observe that when we set \(\sigma^2= 0\), we recover the standard linear regression loss and closed form. However, when we know that our estimates are somewhat noisy, we develop a new closed form that seems to penalize the weights for being large, effectively shrinking our solution. This new solution is called ridge regression, and it is incredibly useful to regularize linear regression and prevent overfitting, far beyond this precise synthetic scenario. </p>
+        <p>First observe that when we set \(\sigma^2= 0\), we recover the standard linear regression closed form. However, when we know that our estimates are somewhat noisy, we develop a new closed form that seems to penalize the weights for being large, effectively shrinking our solution. This new solution is called ridge regression, and it is incredibly useful to regularize linear regression and prevent overfitting, far beyond this precise synthetic scenario.</p>
 
         <br>
 
