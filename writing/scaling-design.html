@@ -60,7 +60,7 @@
 
         <h3>Linear Regression</h3>
 
-        <p>We start with a simple problem: how should we pick inputs for linear regression? We will consider a setup where there is a ground truth \(w \in \R^d\) where each choice is equally likely (flat prior). Everytime we submit an input \(x^{(i)} \in \R^d\), we will recieve an output \(y^{(i)} \in \R\) which is equal to \(w^{\top} x + \epsilon\) for \(\epsilon \sim \Normal(0, \sigma^2)\). This corresponds to getting a noisy estimate of the true label for any chosen input. We will stack \(n\) such points as \(X \in \R^{n\times d}\) and $y \in \R^n$. </p>
+        <p>We start with a simple problem: how should we pick inputs for linear regression? We will consider a setup where there is a ground truth weight vector \(w \in \R^d\) where each choice is equally likely (flat prior). Everytime we submit an input \(x^{(i)} \in \R^d\), we will recieve an output \(y^{(i)} \in \R\) which is equal to \(w^{\top} x + \epsilon\) for \(\epsilon \sim \Normal(0, \sigma^2)\). This corresponds to getting a noisy estimate of the true label for any chosen input. We will stack \(n\) such points as \(X \in \R^{n\times d}\) and $y \in \R^n$. </p>
 
         <h4>Optimal Estimator</h4>
         
@@ -79,7 +79,7 @@
             \end{aligned}
             \]
         </p>
-        <p>This shows us that the posterior is a Gaussian with mean $(X^{\top}X)^{-1}X^{\top}y$ with covariance $\sigma^2(X^{\top}X)^{-1}$. We can now construct a fixed estimate $\hat{w}$ and treat $w$ as a random variable following its posterior distribution. If our estimate is being evaluated under the quadratic loss (expectation of squared distance from true weight), we can take the bias variance decomposition of our error.</p>
+        <p>This shows us that the posterior is a Gaussian with mean $(X^{\top}X)^{-1}X^{\top}y$ with covariance $\sigma^2(X^{\top}X)^{-1}$. We can now construct a fixed estimate $\hat{w}$ and treat the true weight $w$ as a random variable following its posterior distribution. If our estimate is being evaluated under the quadratic loss (expectation of squared distance from true weight), we can take the bias variance decomposition of our error.</p>
         <p class="math">
             \[
             \begin{aligned}
@@ -90,7 +90,7 @@
             \end{aligned}
             \]
         </p>
-        <p>This means our error is determined by how far we are from the mean of the true value (bias) as well as the variance of the posterior. Since the estimate only changes the bias, the best we can do is the unbiased estimate of $(X^{\top}X)^{-1}X^{\top}y$. This achieves error equal to the variance, the sum of the diagonal of the covariance matrix, which is $\text{Tr}\p{\sigma^2(X^{\top}X)^{-1}}$. This means the error is proportional to $\sum_{i\in[d]} \frac{1}{\lambda_i}$ where $\lambda_i$ is the $i$th eigenvalue of $X^{\top}X$. </p>
+        <p>This means our error is determined by how far we are from the mean of the true value (bias) as well as the variance of the posterior. Since the estimate only changes the bias, the best we can do is the unbiased estimate of the mean via $(X^{\top}X)^{-1}X^{\top}y$. This achieves error equal to the variance, the sum of the diagonal of the covariance matrix, which is $\text{Tr}\p{\sigma^2(X^{\top}X)^{-1}}$. This means the error is proportional to $\sum_{i\in[d]} \frac{1}{\lambda_i}$ where $\lambda_i$ is the $i$th eigenvalue of $X^{\top}X$. </p>
 
         <h4>Optimal Selection of $X$</h4>
 
@@ -102,7 +102,7 @@
 
         <br>
             
-        <p>At this point I have gotten lazy and find this matrix by alternating 1) Gram-Schmidt to orthonormalize the columns and 2) rescaling the norms of the rows until convergence. Please let me know if you have an explicit initialization! I only have one via truncating/scaling Hadamard matrices which works for $n = 2^k$. This process empirically meets our criteria, showing its possible to achieve our lower bound. Putting this all together, our choice of $X$ gives error $\sigma^2\frac{n^2}{d}$, which outperforms random guessing. Thank god our hard work paid off!</p>
+        <p>At this point I have gotten lazy and find this matrix by alternating 1) Gram-Schmidt to orthonormalize the columns and 2) rescaling the norms of the rows until convergence. Please let me know if you have an explicit initialization! I only have one via truncating/scaling Hadamard matrices which works for $n = 2^k$. This process empirically meets our criteria, showing its possible to achieve our lower bound. Putting this all together, our choice of inputs $X$ gives error $\sigma^2\frac{n^2}{d}$, which outperforms random guessing. Thank god our hard work paid off!</p>
 
         <figure>
             <img src="../images/scaling-design/optimal-design-lr.png" style="max-width: 70%; height: auto;">
@@ -124,7 +124,7 @@
             </p>
         </figure>
 
-        <p> Suppose we were allowed to pick $c_i \in \R$, corresponding to the log compute spent on training model $i \in[n]$. Then, if we had to fit the model $w_1 + w_2 c_{\text{query}}$, we can solve a regression problem with $X \in \R^{n\times 2}$ where the first column is all $1$'s and the $i$th row of the second column is $c_i$'s'. If this is the case, assuming the same noise model as earlier, we find that the covariance matrix is </p>
+        <p> Suppose we were allowed to pick $c_i \in \R$, corresponding to the log compute spent on training model $i \in[n]$. Then, if we had to fit the model $w_1 + w_2 c_{\text{query}}$, we can solve a regression problem with inputs $X \in \R^{n\times 2}$ where the first column is all $1$'s and the $i$th row of the second column is the log compute $c_i$'s. If this is the case, assuming the same noise model as earlier, we find that the covariance matrix is </p>
 
         <p class="math">
             \[
@@ -139,21 +139,23 @@
 
         <p>which means the variance of the intercept is $\frac{\sigma^2\sumsqc}{n\sumsqc - \p{\sumc}^ 2}$ and the variance of the slope is $\frac{\sigma^2n}{n\sumsqc - \p{\sumc}^ 2}$. In the following, we will ignore the constant factor of $\sigma^2$. </p>
 
-        <h4>Fixed Number of Runs</h4>
+        <h4>Upper Bound Budget</h4>
 
-        <p>We'll now start determining the optimal inputs under different constraints. First, consider a fixed number of runs $n$. To minimize the variance of the intercept, it is best to select arbitrarily smaller runs, under which the variance approaches $\frac{\sigma^2}{n}$. To minimize the variance of the slope, we have to maximize the denominator, which is proportional the sample variance of $c$. Since we could arbitrarily increase this by sending one $c_i \to \infty$, we'll instead bound the values by $B$. In this case, the sample variance is maximized by putting half the points at $0$ and half the points at $B$ (since this sets the mean to $\frac{B}{2}$ while each point has maximal distance to the mean). </p>
+        <p>We'll now start determining the optimal inputs under different constraints. First, consider a fixed number of runs $n$. To minimize the variance of the intercept, it is best to select arbitrarily smaller runs, under which the variance approaches $\frac{\sigma^2}{n}$. To minimize the variance of the slope, we have to maximize the denominator, which is proportional the sample variance of $c$. Since we could arbitrarily increase this by sending one log compute $c_i \to \infty$, we'll instead bound the values by budget $B$. In this case, the sample variance is maximized by putting half the points at $0$ and half the points at the budget $B$ (since this sets the mean to $\frac{B}{2}$ while each point has maximal distance to the mean). </p>
 
-        <h4>Fixed Budget (Linear Compute)</h4>
+        <h4>Linearly Constrained Budget</h4>
 
-        <p>For a more realistic compute constraint, what if $\sumc = B$? Note that this is not perfect since $c_i$ is log compute, not compute. For fixed $n$ and $B$, for both the intercept and slope, we now need to maximize $\sumsqc$ subject to the sum constraint. By simple convexity arguments, this is maximized by setting all of the runs to minimal log compute except for one run that receives $B$ log compute. After this, maximizing $n$ (i.e. adding more zero runs) will decrease the variance of both the slope and intercept. Therefore, it is best to allocate one run to the full compute with as many small runs as possible.</p>
+        <p>For a more realistic compute constraint, what if we have a total budget with a linear constraint of $\sumc = B$? Note that this is not perfect since $c_i$ is log compute, not compute. For fixed $n$ and $B$, for both the intercept and slope, we now need to maximize $\sumsqc$ subject to the sum constraint. By simple convexity arguments, this is maximized by setting all of the runs to minimal log compute except for one run that receives $B$ log compute. After this, more runs $n$ (i.e. adding more zero runs) will decrease the variance of both the slope and intercept. Therefore, it is best to allocate one run to the full compute with as many small runs as possible.</p>
 
-        <h4>Fixed Budget (Log Compute)</h4>
+        <h4>Exponentially Constrained Budget</h4>
 
-        <p>The most realistic constraint is that the amount of compute is fixed, captured by $\sumec = B$. We will introduce dummy variables $d_i = e^{c_i}$, equivalently written $c_i = \log d_i$, making the constraint linear in $d$ with the additional constraints that $d_i \geq 1$. We will focus on minimizing the variance of the slope, which is now maximizing the sample variance of $\log d$. </p>
+        <p>The most realistic constraint is that the amount of compute is fixed, captured by $\sumec = B$. We will introduce dummy variables that measure compute $d_i = e^{c_i}$, equivalently written $c_i = \log d_i$, making the constraint linear in compute $d_i$ with the additional constraints that $d_i \geq 1$. We will focus on minimizing the variance of the slope, which is now maximizing the sample variance of $\log d_i$. </p>
         
         <br>
 
-        <p> One might hope that for a fixed $n$, the optimal solution scales with $B$ like our last two constraints. We are not this fortunate: though the sample variance does not change if we scale $d$, $d_i \geq 1$ prevents us from arbitrarily scaling down. I have lost a bit of steam here, and have empirically found with Gurobi that the optimal solution always has some runs with $d_1 = 1$ and the bigger runs equally sharing the remaining compute. Interestingly, the number of big runs depends on the choice of $B, n$. Given this, if we set $k$ of the runs to each be $d_i = \frac{B - n + k}{k}$, we find that the sample variance is $(nk - k^2)(\log (B - n + k) - \log k)$. At small $B$, it is unclear which $k$ is best and can be found numerically (exampled in Table 1). As $B \to \infty$, the sample variance behaves like $(nk-k^2)\log B$, which means that we want to set $k = \frac{n}{2}$, or evenly divide the runs between $d_i = 1$ and $d_i = \frac{2B}{n} - 1$. This behaves more like the fixed run with upper bound regime instead of the fixed run with linear constraint regime. </p>
+        <p> One might hope that for a fixed number of runs $n$, the optimal solution scales with budget $B$ like our last two constraints. We are not this fortunate: though the denominator does not change if we linearly scale compute $d$, $d_i \geq 1$ prevents us from arbitrarily scaling down. I have lost a bit of steam here, and have empirically found with Gurobi that the optimal solution is always $d_{1}, \ldots, d_{n-k} = 1$ and $d_{n-k+1}, \ldots, d_{n} = \frac{B - n + k}{k}$ for some $k$ which interestingly depends on the choice of $B, n$. For a choice of number of big runs $k$, we find that the denominator is $(nk - k^2)(\log (B - n + k) - \log k)$. At small budgets $B$, it is unclear which $k$ is best and can be found numerically (exampled in Table 1). We empirically find that as we send $B \to \infty$, the optimal number of big runs $k$ scales like $\frac{n}{2}$, which means that the optimal solution is to evenly divide the runs between $d_i = 1$ and $d_i = \frac{2B}{n} - 1$.
+        <!-- As $B \to \infty$, the denominator behaves like $(nk-k^2)\log B$, which means that we want to set $k = \frac{n}{2}$, or evenly divide the runs between $d_i = 1$ and $d_i = \frac{2B}{n} - 1$.  -->
+        This qualitatively shows that the exponential constraint behaves more like the fixed upper bound regime instead of the linear constraint regime. </p>
 
         <br>
 
@@ -193,7 +195,7 @@
 
         <br>
 
-        <p>How do we select the optimal $n$? We simulate all possible choices of $n$ and $k$ and see what works best at different budgets, seen in Figure 3. We find a clean law of setting $n \approx 0.477B$. The reciprocal of the variance of the slope magically follows a straight line as well, which means that the variance is inversely proportional to the budget. </p>
+        <p>How do we select the optimal $n$? We simulate all possible choices of runs $n$ and big runs $k$ and see what works best at different budgets, shown in Figure 3. We surprisingly find a clean law of setting $n \approx 0.477B$ (left). The reciprocal of the variance of the slope magically follows a straight line as well (right), which means that the variance is inversely proportional to the budget. The second line is not surprising conditioned on the first line: if it is optimal to set $n = 0.477 B$ and $k = \frac{n}{2}$, then the reciprocal of the variance of the slope is linear with respect to $B$ with slope $0.138$. I guess that's kind of close to the empirical fit of $0.155$! However, I do not have such an explanation for why the left plot follows a line. </p>
 
         <figure>
             <img src="../images/scaling-design/optimal_n.png" style="max-width: 48%; height: auto;"><img src="../images/scaling-design/optimal_val.png" style="max-width: 48%; height: auto;">
@@ -206,11 +208,11 @@
 
         <h3>Parting Thoughts</h3>
 
-        <p>Under a simple noise model, we've shown how to optimally select inputs, which significantly outperforms random sampling. We took this to a scaling law problem where the optimal input selection were counter-intuitive (at least to me). Most surprising to me is that it never made sense to equally space out the inputs: it was always best to keep all at the minimum or maximum. There are obviously other reasons to equally space out points, such as confirming the law is linear in the first place. Nonetheless, I'm curious which settings lead to spacing out points being optimal. There are some natural followups such as modeling the fact that noise is lower for more compute (shown in <cite><a href="https://arxiv.org/abs/2304.01910">Jordan et al, 2023</a></cite>).</p>
+        <p>Under a simple noise model, we've shown how to optimally select inputs, which significantly outperforms random sampling. We took this to a scaling law problem where the optimal input selection was counter-intuitive (at least to me). Most surprising to me is that it never made sense to space out the inputs: it was always best to keep all at the minimum or maximum. There are obviously other reasons to equally space out points, such as confirming the law is linear in the first place. Nonetheless, I'm curious which settings lead to spacing out points being optimal. There are some natural followups such as modeling the fact that noise is lower for more compute (shown in <cite><a href="https://arxiv.org/abs/2304.01910">Jordan et al, 2023</a></cite>).</p>
 
         <br>
         
-        <p>Deriving these simple results from first principles was a blast. I expect to run into this again someday if I start running large-scale experiments. Thanks to Ankit Bisain, Jacob Springer, and Mahbod Majid for tolerating my yapping and helping me with some math. </p>
+        <p>Deriving these simple results from first principles was a blast. I hope to run into this flavor of problems someday if I start running large-scale experiments. Thanks to Ankit Bisain, Jacob Springer, and Mahbod Majid for tolerating my yapping and helping me with some math. </p>
         
         <br>
             

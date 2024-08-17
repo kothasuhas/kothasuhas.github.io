@@ -109,7 +109,7 @@
         <p>Take a second to see if this feels familiar. We note that for this specific choice of prior, the posterior is also Gaussian (consequence of <a href="https://www.wikiwand.com/en/Conjugate_prior"> conjugate priors</a>). This means that the mode of the posterior is the same as its mean. We will now derive the mode, as it is mathematically simpler. Following similar linear algebra for the closed form for linear regression, the weight that maximizes the likelihood is
         </p>
         <p class="math">\[w = \left(X^{\top}X + \frac{\sigma^2}{\tau^2}I_d\right)^{-1}X^{\top}y\]</p>
-        <p>First observe that when we set \(\tau^2= 0\), we recover the standard linear regression closed form. However, when we have a prior that the weight vector is somewhat small (instead of having a uniform prior over all possible weights), we develop a new closed form penalizes the weights for being large, effectively shrinking our solution. This new solution is called ridge regression, and it is incredibly useful to regularize linear regression and prevent overfitting, far beyond this precise synthetic scenario.</p>
+        <p>First observe that when we set \(\tau^2= \infty\), we recover the standard linear regression closed form. However, when we have a prior that the weight vector is somewhat small (instead of having a uniform prior over all possible weights), we develop a new closed form penalizes the weights for being large, effectively shrinking our solution. This new solution is called ridge regression, and it is incredibly useful to regularize linear regression and prevent overfitting, far beyond this precise synthetic scenario.</p>
 
         <br>
 

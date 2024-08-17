@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en" id="html">
+
+<head>
+    <meta charset="utf-8">
+    <title>Suhas Kotha</title>
+    <!-- <script src="jquery-3.6.3.min.js"></script> -->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script type="text/x-mathjax-config">
+        MathJax.Hub.Config({
+          tex2jax: {
+            inlineMath: [['$', '$'], ['\\(', '\\)']],
+            displayMath: [['$$', '$$'], ['\\[', '\\]']],
+            processEscapes: true
+          }
+        });
+    </script>
+    <script type="text/javascript" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-MML-AM_CHTML"></script>
+    </script>
+    <meta name="description" content="Tensor Programs and Maximal Update Parametrization">
+    <meta name="author" content="Suhas Kotha">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href='https://fonts.googleapis.com/css?family=Quicksand' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" href="../css/style.css?v=<?php echo rand(); ?>">
+    <link rel="icon" type="image/png" href="../images/dragon_logo.png">
+    <style id="autogen"></style>
+</head>
+
+<body style="max-width: 100%; margin: 0 auto;">
+    <p><a href=../index.html>Home</a></p>
+    <div class="blog-post">
+        <br>
+
+        <h1>Tensor Programs and Maximal Update Parametrization</h1>
+
+        \(
+        \def\R{\mathbb{R}}
+        \def\muP{\mu\text{P}}
+        \)
+
+        <br>
+        <p style="text-align: center;">6/6/2024</p>
+        <br>
+
+        <p> It is easier to characterize the behavior of neural network parameters and activations as you take the width of the model to infinity. Interestingly, asymptotic results about the infinite width limit can yield concrete suggestions for finite width neural networks <i>only when scaled correctly</i>. Maximal Update Parameterization ($\muP$) aims to maximize feature learning by requiring that the gradients should be maximal subject to the activations being constant norm. Tensor Programs is a mathematical "package" that can analytically characterize the behavior of parameter initialization (TP1), gradient updates (TP2), and parameters over continuous-time training (TP2b) or discrete-time training (TP4). Though such results exist for simple instances such as MLP's under SGD, Tensor Programs does the mathematical engineering to extend this to modern architectures (i.e. Transformers) and optimizers (i.e. Adam). </p>
+
+        <br>
+
+        <p> This line of work has yielded empirical insights on hyperparameter selection (TP4, TP5). To start, current initialization schemes are suboptimal compared to $\muP$ initialization under optimal hyperparameter-tuning. More importantly, if one wants to determine the optimal hyperparameters for larger models, it suffices to tune the hyperparameters on a narrower model following $\muP$ initialization. This transfer does not occur if one scales using standard initialization schemes. </p>
+
+        <br>
+
+        <p> This framework is a necessarily dense formalization currently spanning 594 pages over 10 papers. In this post, I summarize the takeaways and ideas I found most important. For example, we will look at intuitive examples generalized by this framework instead of looking at the implementation details, and we will spend more time on feature learning instead of the kernel regime. </p>
+
+        <h3>Setup</h3>
+
+        <h4>Data format</h4>
+
+        
+        <br>
+ 
+        <p>Thank you for reading, and feel free to reach out with any questions or thoughts!</p>
+
+        <script type="text/javascript" src="../js/post.js"></script>
+    </div>
+</body>
+
+</html>
+
+
+<!-- publish link: http://www.andrew.cmu.edu/server/publish.html -->

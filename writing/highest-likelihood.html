@@ -37,11 +37,11 @@
         <p style="text-align: center;">5/21/2024</p>
         <br>
 
-        <p>Code available <a href="https://github.com/kothasuhas/highest_likelihood">here</a>, kudos to <a href="https://www.linkedin.com/in/amanda--li">Amanda Li</a> for her help!</p>
+        <p>Code available <a href="https://github.com/kothasuhas/highest_likelihood">here</a>. Special thanks to help from <a href="https://www.linkedin.com/in/amanda--li">Amanda Li</a> and discussion with <a href="https://sprin.xyz/">Jacob Springer</a> and <a href="https://vaishnavh.github.io/home/index.html">Vaishnavh Nagarajan</a>.</p>
 
         <h3>Introduction</h3>
 
-        <p> A causal language model takes in a sequence of tokens and produces a probability distribution over the next token, which is then sampled from with some temperature. Lowering this temperature approaches greedily selecting the next token with the highest probability (illustrated in Figure 1). However, greedy decoding does not necessarily sample the sequence of tokens the model assigns the highest likelihood. This may be important for difficult tasks where quality is of the utmost importance. On the other hand, the generations may be unnatural/pathological since they are not seen at training time. This motivates the following question: Is the highest likelihood string better than the greedy string? </p>
+        <p> A causal language model takes in a sequence of tokens and produces a probability distribution over the next token, which is then sampled with some temperature. Lowering this temperature approaches greedily selecting the next token with the highest probability (illustrated in Figure 1). However, greedy decoding does not necessarily sample the sequence of tokens the model assigns the highest likelihood. This may be important for difficult tasks where quality is of the utmost importance. On the other hand, the highest likelihood generations may be unnatural/pathological. This motivates the following question: Is the highest likelihood string better than the greedy string? </p>
 
         <figure>
             <img src="../images/highest-likelihood/greedy.png" style="max-width: 70%; height: auto;">
@@ -56,11 +56,11 @@
 
         <br>
 
-        <p> Our first heuristic is maintaining the best full-length sequence found so far. We note that the likelihood of a string can only decrease if you add more characters to it. Therefore, if at any intermediate node of the tree (where we are considering an uncompleted sequence of $< k$ tokens) the sequence is already lower likelihood than our best so far, none of the children are candidates for the highest likelihood sequence. Therefore, we can stop traversing down a node's children if its worse than the counter. </p>
+        <p> Our first heuristic is maintaining the best full-length sequence found so far. We note that the likelihood of a string can only decrease if you add more characters to it. Suppose we encounter an intermediate node of the tree, representing an uncompleted sequence of $< k$ tokens, which already has lower likelihood than our current best length $k$ sequence. Since the likelihood can only go down, none of the children are candidates for the highest likelihood sequence. Therefore, we can stop traversing down this node's children and move on to exploring other nodes. </p>
 
         <br>
 
-        <p> Our second heuristic is re-ordering the children of any intermediate node by the likelihood of each child which will probably help us run into the highest likelihood sequence earlier. Without the first heuristic, this re-ordering does not change the runtime of the algorithm at all. However, this heuristic complements the counter quite nicely--since we run into better sequences earlier, we can prune more aggressively.</p>
+        <p> Our second heuristic is re-ordering the children of any intermediate node by the likelihood of each child. Without the first heuristic, this re-ordering does not change the runtime of the algorithm at all. However, this heuristic will probably help us run into the highest likelihood sequence earlier. This complements the first heuristic quite nicely--since we run into better sequences earlier, we can prune more aggressively.</p>
             
         <figure>
             <img src="../images/highest-likelihood/highest-likelihood.png" style="max-width: 70%; height: auto;">
@@ -71,11 +71,12 @@
 
         <h3>Results</h3>
 
-        <p>Due to computational limitations, we test with the relatively smaller open-source models of Pythia-70m, Pythia-160m, and Pythia-410m <cite><a href="https://arxiv.org/abs/2304.01373">(Biderman et al, 2023)</a></cite>. We test decoding from the model starting with the empty sequence (only the BOS token). To constrain the search space, we only use a 188 token subset sourced from common English words and sentences. We track the best completion for these models from lengths 1 to 8 in Table 1 TODO. </p>
+        <p>Due to computational limitations, we test with the relatively smaller open-source models of Pythia-70m, Pythia-160m, and Pythia-410m <cite><a href="https://arxiv.org/abs/2304.01373">(Biderman et al, 2023)</a></cite>. We test decoding from the model starting with the empty sequence (only the BOS token). To constrain the search space, we only use a 188 token subset sourced from common English words and sentences. We track the best completion for these models from lengths 1 to 8 in Table 1. </p>
 
         <br>
 
-        <table border="1">
+        <table border="1" style="margin: auto;">
+            <caption><p>Table 1: Highest likelihood and greedy completions for lengths 1 to 8 from Pythia models.</p></caption>
             <tr>
                 <th></th>
                 <th><p>Pythia-70m</p></th>
