@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en" id="html">
+
+<head>
+        <meta charset="utf-8">
+        <title>Suhas Kotha</title>
+        <!-- <script src="jquery-3.6.3.min.js"></script> -->
+        <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+        <script type="text/x-mathjax-config">
+                MathJax.Hub.Config({
+                    tex2jax: {
+                        inlineMath: [['$', '$'], ['\\(', '\\)']],
+                        displayMath: [['$$', '$$'], ['\\[', '\\]']],
+                        processEscapes: true
+                    }
+                });
+        </script>
+        <script type="text/javascript" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-MML-AM_CHTML"></script>
+        </script>
+        <meta name="description" content="Second Law of Thermodynamics">
+        <meta name="author" content="Suhas Kotha">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link href='https://fonts.googleapis.com/css?family=Quicksand' rel='stylesheet' type='text/css'>
+        <link rel="stylesheet" href="../css/style.css?v=<?php echo rand(); ?>">
+        <link rel="icon" type="image/png" href="../images/dragon_logo.png">
+        <style id="autogen"></style>
+</head>
+
+<body style="max-width: 100%; margin: 0 auto;">
+        <p><a href=../index.html>Home</a></p>
+        <div class="blog-post">
+            <br>
+
+            <h1>Second Law of Thermodynamics</h1>
+
+            \(
+                    \newcommand{\Pof}[1]{P\left(#1\right)}
+            \)
+
+            <br>
+            <p style="text-align: center;">8/16/2024</p>
+            <br>
+
+            <p> One simple statement of the second law of thermodynamics is that "entropy will almost always increase over time". This is said to imply "heat always flows spontaneously from hotter to colder regions of matter". I was always curious how to prove this. Turns out the "proof" is a simple consequence of reasonable assumptions and I wanted to share it. This short note follows early chapters in <a href="https://jontallen.ece.illinois.edu/Public/BOOKS/Kittel-ThermalPhysics.80.pdf">Thermal Physics</a> by Kittel and Kroemer. Disclaimer: I know zero physics so take with a pound of salt. </p>
+
+            <h3>Setup</h3>
+
+            <p>We will start by considering an isolated <u>system</u> with a fixed amount of <u>energy</u> $E$, fixed volume, and fixed number of particles. This system can exist in multiple states where a specific state is only <u>accessible</u> if the system is at a specific energy level. Since the number of accessible states only depends on the energy of the system, we will denote it $g(E)$. </p>
+
+            <br>
+
+            <p>The <u>fundamental assumption</u> is that all accessible states in a system are equally probable. After looking into it, it seems to be believed because it is reasonable, experimentally accurate, and simple for calculations. <u>Entropy</u> measures how "random" a system is, typically defined as $$\sigma = \sum_{s} \Pof{s} \ln \left(\frac{1}{\Pof{s}}\right)$$ for all states $s$. Under the fundamental assumption, all accessible states are equally likely, so the entropy only depends on the energy via $$\sigma(E) = \ln g(E)$$ This definition also implies that the entropy of two seperately isolated systems is additive. The <u>temperature</u> of a system $\tau$ is defined as $$\frac{1}{\tau} = \frac{\partial \sigma}{\partial E}$$ This captures that a cold system will significantly increase in entropy with more energy and a hot system will barely increase in entropy with more energy. I have no further intuition for why this definition is true. Note that this unit of temperature is a constant factor off from Kelvin units (the constant factor being Boltzmann's constant). </p>
+
+            <h3>Entropy increases when two systems interact</h3>
+
+            <p>Suppose we put system $A$ in contact with system $B$. Both systems start with energy $E_{A, \text{init}}, E_{B, \text{init}}$, and now energy can flow between as the total energy $E$ remains fixed. The number of states accessible to the total system is every accessible combination of $A$ and $B$, denoted $$g(E) = \sum_{E_A + E_B = E} g_A(E_A) g_B(E_B)$$This by itself proves that entropy increases when two systems interact. Namely, </p>
+
+            <p class="math">
+                \[
+                \begin{align*}
+                    \sigma_{\text{combined}}(E) &= \ln \sum_{E_A + E_B = E} g_A(E_A) g_B(E_B) \\
+                    &\geq \ln \left( g_A(E_{A, \text{init}}) g_B(E_{B, \text{init}}) \right) \\
+                    &= \sigma_{A}(E_{A, \text{init}}) + \sigma_{B}(E_{B, \text{init}})
+                \end{align*}
+                \]
+            </p>
+
+            <p>More succintly, entropy is determined by the joint number of states, and this can only increase if energy can flow. Very simple. </p>
+
+            <h3>Temperatures stabilizes</h3>
+
+            <p>In practice, it turns out that the vast majority of states belong to one way of splitting the energies. Mathematically, this means that the sum of states is dominated by a single term, or $$\sigma(E) \approx \sigma_A(E_A) + \sigma_B(E - E_A)$$ for optimal $E_A$. To find these energies, we can take the derivative with respect to $E_A$ and set to $0$ to find that $$\frac{\partial \sigma_A}{\partial E_A} = \frac{\partial \sigma_B}{\partial E_B}$$ Funnily enough, our definition of temperature directly implies that $\frac{1}{\tau_1} = \frac{1}{\tau_2}$. This means that under our additional assumption, the temperatures of the systems tend to equal. </p>
+
+            <h3>Energy flows from hotter to colder</h3>
+
+            <p>We know that the temperatures are eventually equal. How does the energy move to make this happen? Well, suppose $\Delta E$ energy moved from system $A$ to system $B$. We can write the change in entropy as </p>
+
+            <p class="math">
+                \begin{aligned}
+                    \Delta \sigma &= \frac{\partial \sigma_A}{\partial E_A} (- \Delta E) + \frac{\partial \sigma_B}{\partial E_B} \Delta E \\
+                    &= \Delta E\left(- \frac{1}{\tau_A} + \frac{1}{\tau_B}\right)
+                \end{aligned}
+            </p>
+
+            <p>Therefore, if the entropy is increasing, and a positive amount of energy moved from $A$ to $B$, then $\tau_A > \tau_B$ and $A$ must be hotter than $B$. Therefore, energy flows from hotter to colder.</p>
+
+            <h3>Conclusion</h3>
+
+            <p>There you have it. Simple proofs that </p>
+                <ol>
+                    <li>entropy increases when systems interact (since there are more possibilities for the system)</li>
+                    <li>temperatures approach equal (since this is the vast majority of the possible states)</li>
+                    <li>energy flows from hotter to colder (since otherwise the entropy would decrease)</li>
+                </ol>
+                
+            <p>Thank you for reading, and feel free to reach out with any questions or thoughts! </p>
+
+            <br>
+
+        <script type="text/javascript" src="../js/post.js"></script>
+    </div>
+</body>
+
+</html>
+
+
+<!-- publish link: http://www.andrew.cmu.edu/server/publish.html -->
