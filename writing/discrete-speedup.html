@@ -155,7 +155,7 @@
 
         <h4>Effect of Task Count</h4>
 
-        <p>Obviously, this depends on the number of tasks, which we plot in Figure 3. If there are too few tasks (e.g. 32), then the model never learns ridge regression along the way to discrete regression. If there are too many tasks (e.g. 4096), then its effectively equivalent to training on the full gaussian distribution and there is no increase in speed of convergence. However, our experiments reveal a sweet spot in the middle where the model quickly learns righe regression before losing it for discrete regression. There is some variance for running over a fixed task count, but I find that this trend holds robustly over many reruns. </p>
+        <p>Obviously, this depends on the number of tasks, which we plot in Figure 3. If there are too few tasks (e.g. 32), then the model never learns ridge regression along the way to discrete regression. If there are too many tasks (e.g. 4096), then its effectively equivalent to training on the full gaussian distribution and there is no increase in speed of convergence. However, our experiments reveal a sweet spot in the middle where the model quickly learns ridge regression before losing it for discrete regression. There is some variance for running over a fixed task count, but I find that this trend holds robustly over many reruns. </p>
 
         <figure>
             <img src="../images/discrete-speedup/discrete_varying_task.png" style="max-width: 80%; height: auto;">
