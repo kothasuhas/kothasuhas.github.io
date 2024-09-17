@@ -102,7 +102,7 @@
 
         <br>
             
-        <p>At this point I have gotten lazy and find this matrix by alternating 1) Gram-Schmidt to orthonormalize the columns and 2) rescaling the norms of the rows until convergence. Please let me know if you have an explicit initialization! I only have one via truncating/scaling Hadamard matrices which works for $n = 2^k$. This process empirically meets our criteria, showing its possible to achieve our lower bound. Putting this all together, our choice of inputs $X$ gives error $\sigma^2\frac{n^2}{d}$, which outperforms random guessing. Thank god our hard work paid off!</p>
+        <p>At this point I have gotten lazy and find this matrix by alternating 1) Gram-Schmidt to orthonormalize the columns and 2) rescaling the norms of the rows until convergence. Please let me know if you have an explicit initialization! I only have one via truncating/scaling Hadamard matrices which works for $n = 2^k$. This process empirically meets our criteria, showing its possible to achieve our lower bound. Putting this all together, our choice of inputs $X$ gives error $\sigma^2\frac{d^2}{n}$, which outperforms random guessing. Thank god our hard work paid off!</p>
 
         <figure>
             <img src="../images/scaling-design/optimal-design-lr.png" style="max-width: 70%; height: auto;">
