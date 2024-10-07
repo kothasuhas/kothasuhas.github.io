@@ -38,8 +38,8 @@ function renderPapers() {
         ),
         generatePaperHTML(
             "A Safe Harbor for AI Evaluation and Red Teaming",
-            ["Shayne Longpre", "Sayash Kapoor", "Kevin Klyman", "Ashwin Ramaswami", "Rishi Bommasani", "Borhane Blili-Hamelin", "Yangsibo Huang", "Aviya Skowron", "Zheng-Xin Yong", "Suhas Kotha", "Yi Zeng", "Weiyan Shi", "Xianjun Yang", "Reid Southen", "Alexander Robey", "Patrick Chao", "Diyi Yang", "Ruoxi Jia", "Daniel Kang", "Sandy Pentland", "Arvind Narayanan", "Percy Liang", "Peter Henderson"],
-            "ICML 2024 (Position)",
+            ["Shayne Longpre et al (23 authors)"],
+            "ICML 2024 (Oral Position)",
             "https://arxiv.org/abs/2403.04893",
             "NA",
             false
