@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en" id="html">
+
+<head>
+    <meta charset="utf-8">
+    <title>Suhas Kotha</title>
+    <!-- <script src="jquery-3.6.3.min.js"></script> -->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script type="text/x-mathjax-config">
+        MathJax.Hub.Config({
+          tex2jax: {
+            inlineMath: [['$', '$'], ['\\(', '\\)']],
+            displayMath: [['$$', '$$'], ['\\[', '\\]']],
+            processEscapes: true
+          }
+        });
+    </script>
+    <script type="text/javascript" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-MML-AM_CHTML"></script>
+    </script>
+    <meta name="description" content="Linear Policies are Optimal (for simple dynamics and costs)">
+    <meta name="author" content="Suhas Kotha">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href='https://fonts.googleapis.com/css?family=Quicksand' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" href="../css/style.css?v=<?php echo rand(); ?>">
+    <link rel="icon" type="image/png" href="../images/dragon_logo.png">
+    <style id="autogen"></style>
+</head>
+
+<body style="max-width: 100%; margin: 0 auto;">
+    <p><a href=../index.html>Home</a></p>
+    <div class="blog-post">
+        <br>
+
+        <h1>Linear Policies are Optimal (for simple dynamics and costs)</h1>
+
+        \(
+        \def\R{\mathbb{R}}
+        \)
+
+        <br>
+        <p style="text-align: center;">11/22/2024</p>
+        <br>
+
+        <p>Suppose we are controlling a system where we observe the state and decide on an action, for example a robot or a financial portfolio. What policy achieves the optimal cost? In general, this problem is really difficult and may require an arbitrarily complicated decision-making algorithm; in fact, this is the core problem studied in control and reinforcement learning. In this post, we will try to solve the simplest version of this problem. Specifically, we will assume that the future state is determined by a linear function of the current state and action (linear dynamics) and that the cost is quadratic in the state and action. In this case, we can exactly solve for the optimal policy. Perhaps interestingly, the optimal policy is a linear function of the state! This result is known as the <i>Linear Quadratic Regulator</i> (LQR) and is a celebrated result in control theory.</p>
+
+        <br>
+
+        <h4>Dynamics</h4>
+
+        <p>At time step $t$, we get to observe our current state $x_t \in \R^n$. Based on this state, we decide on an action $u_t \in \R^m$, given by our policy $\pi : \R^n \to \R^m$. In linear-time invariant dynamics (LTI), the next state $x_{t+1}$ is determined by a linear function of the current state and action:</p>
+        
+        <p class="math">
+            $$x_{t+1} = A x_t + B u_t = A x_t + B \pi(x_t)$$
+        </p>
+        
+        <h4>Cost</h4>
+
+        <p>We will assume there exists some cost function $J(\pi)$ that we wish to minimize. For simplicity, we will assume that this cost is a quadratic function of the state and action:</p>
+        
+        <p class="math">
+            $$J(\pi) = \sum_{t=0}^{\infty} \left( x_t^{\top} Q x_t + u_t^{\top} R u_t \right)$$
+        </p>
+
+        <p>where $Q$ is a positive semidefinite matrix and $R$ is a positive definite matrix (for future convenience). Note that one can introduce linear and constant terms in the cost function by extending the state and action spaces.</p>
+
+        <h4>Value Function</h4>
+
+        <p>The value function $V(x)$ is the cost-to-go starting from state $x$. It is defined as the minimum cost achievable from state $x$ over all policies $\pi$. Given a state $x_t$ at time $t$, the value function $V(x_t)$ is given by:</p>
+        
+        <p class="math">
+            \begin{aligned} 
+                V(x_t) &= \min_{\pi} J(\pi) \\
+                &= \min_{\pi} \sum_{k=t}^{\infty} \left( x_k^{\top} Q x_k + u_k^{\top} R u_k \right)
+            \end{aligned}
+        </p>
+
+        <p>The benefit of specifying the value function is that we can recursively compute it by substituting in the dynamics of the system, referred to as the <i>Bellman equation</i>.</p>
+
+        <p class="math">
+            \begin{aligned} 
+                V(x_t) &= \min_{u_t} \left( x_t^{\top} Q x_t + u_t^{\top} R u_t + V(A x_t + B u_t) \right)
+            \end{aligned}
+        </p>
+
+        <h4>Solving for the Optimal Policy</h4>
+
+        <p>Solving this equation depends on the form of the value function. Here, we will start by assuming that the value function is quadratic, i.e. $V(x) = x^{\top} P x$ for some positive semidefinite matrix $P$. In this case, we can expand our expression for the value function:</p>
+
+        <p class="math">
+            \begin{aligned} 
+                V(x_t) &= \min_{u_t} \left( x_t^{\top} Q x_t + u_t^{\top} R u_t + (A x_t + B u_t)^{\top} P (A x_t + B u_t) \right) \\
+                &= \min_{u_t} \left( x_t^{\top} Q x_t + u_t^{\top} R u_t + x_t^{\top} A^{\top} P A x_t + 2 x_t^{\top} A^{\top} P B u_t + u_t^{\top} B^{\top} P B u_t \right) \\
+                &= x_t^{\top} Q x_t + x_t^{\top} A^{\top} P A x_t + \min_{u_t} \left( u_t^{\top} (R + B^{\top} P B) u_t + 2 x_t^{\top} A^{\top} P B u_t \right)
+            \end{aligned}
+        </p>
+
+        <p>To find the minimum, we take the derivative with respect to $u_t$ and set it to zero:</p>
+
+        <p class="math">
+            \begin{aligned} 
+                \frac{\partial}{\partial u_t} \left( u_t^{\top} (R + B^{\top} P B) u_t + 2 x_t^{\top} A^{\top} P B u_t \right) = 0 \\
+                \Rightarrow 2 (R + B^{\top} P B) u_t + 2 B^{\top} P A x_t = 0 \\
+                \Rightarrow u_t = - (R + B^{\top} P B)^{-1} B^{\top} P A x_t
+            \end{aligned}
+        </p>
+
+        <p>Cool! We've found the optimal action as a function of the state. As mentioned earlier, the optimal policy is linear in the state and can be written as $u_t = K x_t$ for some matrix $K$.</p>
+
+        <h4>Return to Value Function</h4>
+
+        <p>We currently can not compute the value function because we do not know the matrix $P$. To find this matrix, we can substitute our expression for the optimal action back into our expression for the value function.</p>
+
+        <p class="math">
+            \begin{aligned} 
+                V(x_t) &= x_t^{\top} Q x_t + x_t^{\top} A^{\top} P A x_t - x_t^{\top} A^{\top} P B (R + B^{\top} P B)^{-1} B^{\top} P A x_t \\
+                &= x_t^{\top} \left( Q + A^{\top} P A - A^{\top} P B (R + B^{\top} P B)^{-1} B^{\top} P A \right) x_t \\
+                & \phantom{.} \\
+                \Rightarrow P &= Q + A^{\top} P A - A^{\top} P B (R + B^{\top} P B)^{-1} B^{\top} P A
+            \end{aligned}
+        </p>
+
+        <p>This is referred to as the <i>discrete-time algebraic Riccati equation</i>. Solving this equation will give us the matrix $P$, which we can substitute back into our expression for the optimal action to get the optimal policy.</p>
+        
+        <h3>Conclusion</h3>
+
+        <p>In this post, we have shown that under quadratic costs and linear dynamics, the optimal policy is linear. Though this provides a closed-form solution, it might not be practical since it requires knowing the parameters of the dynamics/costs as well as solving the Riccati equation. However, this result provides motivation for using linear policies in practice when the dynamics and costs are sufficiently simple. Moreover, this technique can be used to solve more complicated nonlinear systems by linearizing the dynamics at each step with a Taylor expansion.</p>
+
+        <br>
+
+        <p>Hope you found this result as cute as I did! Thank you for reading, and feel free to reach out with any questions or thoughts!</p>
+
+        <script type="text/javascript" src="../js/post.js"></script>
+    </div>
+</body>
+
+</html>
+
+
+<!-- publish link: http://www.andrew.cmu.edu/server/publish.html -->
