@@ -17,7 +17,7 @@
     </script>
     <script type="text/javascript" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-MML-AM_CHTML"></script>
     </script>
-    <meta name="description" content="Intuition behind Double Descent">
+    <meta name="description" content="Some Intuition Behind Double Descent">
     <meta name="author" content="Suhas Kotha">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link href='https://fonts.googleapis.com/css?family=Quicksand' rel='stylesheet' type='text/css'>
@@ -31,155 +31,96 @@
     <div class="blog-post">
         <br>
 
-        <h1>Intuition behind Double Descent</h1>
+        <h1>Some Intuition Behind Double Descent</h1>
 
         \(
         \def\R{\mathbb{R}}
         \)
 
         <br>
-        <p style="text-align: center;">9/28/2024</p>
+        <p style="text-align: center;">2/13/2025</p>
         <br>
 
-        <p> Every machine learning class starts by learning about overfitting. For a given train and test dataset, we want to pick a model that gets low error on the training data while also generalizing to the test data. Taking larger models will get lower training error, but may overfit to the training data and get higher test error. This suggests picking medium-sized models that can represent more complex function without "memorizing" the training data. This principle is generally referred to as the bias-variance trade-off, plotted in Figure 1 TODO. One will readily find that this is completely at odds with current machine learning--everybody is constantly pushing to train the largest model possible. Why aren't these models overfitting and achieving horrible test error?</p>
-
-        <br>
-
-        <p><u>Unbiased estimate of any job's runtime</u></p>
-<br>
-
-        <p>We start a job that takes time $T$ (of unknown value/distribution). For any time $t$ while the job is running, you must submit a guess $E_t$ of the job's duration. Is it possible to select $E_t$ such that in hindsight, for uniformly sampled $t$, it estimates the true runtime $T$ in expectation?</p>
+        <p> Given a train dataset, what size model will best fit the test distribution? Most intro classes will tell you to pick a medium-sized model following the bias-variance trade-off. Though larger models can represent more complex functions, they may overfit to noise in the training data and get high test error (low bias, high variance). On the other hand, smaller models may underfit the training data and get high training error (high bias, low variance). Figure 1, left captures this intuition. However, anybody practicing machine learning knows that larger models are better. In fact, we spend billions of dollars to train the largest models possible.</p>
 
         <br>
 
-        <p>Only in the last decade, machine learning researchers have realized that if you make models sufficiently large, the test error will actually start decreasing again! This phenomenon is known as double descent, plotted in Figure 2 TODO. Though this phenomenon has been driving empirical progress in machine learning, it is rarely taught in machine learning classes, and students may walk away with the incorrect impression that larger models always overfit. </p>
+        <p>Doesn't this defy the bias-variance trade-off? In fact, the bias-variance trade-off is a myth. For sufficiently large model size, referred to as the "overparameterized" regime, the test error can actually start decreasing again! This phenomenon is known as double descent, plotted in Figure 1, right. It can be observed in many settings (<cite><a href="https://arxiv.org/abs/1812.11118">Belkin et al, 2018</a></cite>), most notably deep neural networks (<cite><a href="https://arxiv.org/abs/1912.02292">Nakkiran et al, 2019</a></cite>). Though this phenomenon has driven empirical progress in machine learning, it is rarely taught in machine learning classes, and students may walk away with the incorrect impression that larger models always overfit. </p>
 
-        <br>
-
-        <p></p>
-
-        <p>The elegant work of <cite><a href="https://arxiv.org/abs/2006.16236">Katharopoulos et al, 2020</a></cite> finds that a slightly modified transformer is equivalent to an RNN's. This specifies an architecture that achieves the training parallelism of transformers with the decoding complexity of RNN's. This connection underlies the success of state space models <cite><a href="https://arxiv.org/abs/2111.00396">(Gu et al, 2022)</a></cite>, the current strongest competitor to transformers (refer to <cite><a href="https://arxiv.org/abs/2312.00752">Gu and Dao, 2024</a></cite> for a rigorous/up-to-date connection). </p>
-        
-        <br>
-        
-        <p> In this post, we will first review a vanilla transformer and RNN. Then, we will see how transformers with linear attention are equivalent to RNN's. This post very closely follows the elegant exposition of the original paper.</p>
-
-        <h3>Architecture Intro</h3>
-
-        <h4>RNNs</h4>
-
-        <p>An RNN operates on a sequence token by token. For the $i$th token $x_i \in \R^d$, it produces a hidden state $h_i \in \R^k$ that 1) predicts the next token and 2) determines the next hidden state. To predict the $i$th token $x_{i+1} \in \R^d$, it uses the following recurrence</p>
-
-        <p class="math">
-            <p class="math">
-            \[
-            \begin{aligned}
-            h_{i+1} &= \RNN(x_i, h_i) &\text{[$\RNN : \R^k \times \R^d \to \R^d$]}\\
-            x_{i+1} &= \Head(h_{i+1}) &\text{[$\Head : \R^k \to [V]$]}
-            \end{aligned}
-            \]
+        <figure>
+            <img src="../images/double-descent/schematic.png" style="max-width: 95%; height: auto;">
+            <p>
+            <figcaption>Figure 1: Taken from <cite><a href="https://arxiv.org/abs/1812.11118">Belkin et al, 2018</a></cite>.</figcaption>
             </p>
-        </p>
+        </figure>
 
-        <p>where $\RNN$ is a deep neural network and $\Head$ (potentially randomly) selects the next token from $V$ candidates using the information in the hidden state. This sequential nature enables fast inference since it takes $\bO{1}$ time to generate each token. However, its sequential nature prohibits fast parallel training, limiting its application in current models. </p>
-
-        <h4>(Causal) Transformers</h4>
-
-        <p>Suppose the input is $x \in \R^{n \times d}$ for $n$ input tokens. A transformer produces an output $\R^{n \times k}$, where the $i$th layer of the output predicts the $i+1$th token. A transformer is composed of multiple blocks that are each $\R^{n \times k} \to \R^{n \times k}$ is implemented as </p>
-        <p class="math">
-            \begin{aligned}
-            \Block(x) &= \MLP(\Attn(x) + x) &\text{[$\MLP ,\Attn ,\Block : \R^{n \times d} \to \R^{n \times d}$]} \\
-            \Transformer &= \Block_1 \circ \cdots \circ \Block_m &\text{[$\Transformer : \R^{n \times d} \to \R^{n \times d}$]} \\
-            h &= \Transformer(x) &\text{[$h \in \R^{n \times d}$]} \\
-            x_{i+1} &= \Head(h_i) &\text{[$\Head : \R^d \to [V]$]}
-            \end{aligned}
-        </p>
-
-        <p>$\MLP$ applies a fixed neural network  $\R^d \to \R^d$ to each token independently and only takes constant compute per token. $\Attn : \R^{n\times d} \to \R^{n \times d}$ operates across all the tokens and is where the model spends quadratic time at generation. To generate $n$ tokens, we iteratively generate the $i+1$th token from the previous $i$ tokens.</p>
+        <p>Why do larger models not overfit? After a lot of work, people found that double descent surprisingly occurs even for plain old linear regression. In the underparameterized regime, one finds that increasing the number of parameters starts overfitting to the noise in the training data. In fact, when the number of parameters is equal to the number of training samples, exactly one model perfectly fits the training data; this solution gets catastrophic test error. In the overparameterized regime, there are many models that perfectly fit the training data, many of which poorly generalize. The magic happens in selecting the minimum norm solution: this particular solution generalizes quite well to the test set, representing an important inductive bias. Interestingly, standard gradient descent is known to converge to the minimum norm solution, showing how optimization interacts with the overparameterized parameter space.</p>
 
         <br>
 
-        <p>We will focus on efficiently implementing an attention layer for a single block. Attention first computes a similarity matrix between all the tokens. This similarity matrix is used to linearly combine the representations of other tokens. More concretely, define weight matrices $W_Q \in \R^{d \times k}$, $W_K \in \R^{d \times k}$, and $W_V \in \R^{d \times d}$. Then, compute the attention as</p>
-        </p>
-        <p class="math">
-            \begin{aligned} 
-            Q &= xW_Q &\text{[$Q \in \R^{n \times k}$]} \\
-            K &= xW_K &\text{[$K \in \R^{n \times k}$]} \\
-            V &= xW_V &\text{[$V \in \R^{n \times d}$]} \\
-            \Attn(x) &= \text{softmax}\left(\frac{QK^{\top}}{\sqrt{d}}\right)V &\text{[$\Attn(x) \in \R^{n \times d}$]}
-            \end{aligned}
-        </p>
+        <p>In this post, we will walk through two linear regression settings that exhibit double descent, following the excellent work of <cite><a href="https://arxiv.org/abs/1903.08560">Hastie et al, 2019</a></cite>. The first setting will be simpler (ordinary least squares) and the second setting will be a more faithful replication of the double descent phenomenon (latent space features). This post is intended to be an accessible description of the key results, please refer to the original work for more general theorems and the actual proofs!</p>
 
-        <p> Most transformers are causal, which means that the output for token $i$ only depends on tokens that precede it. This is achieved by masking the similarity matrix before applying softmax. Therefore, we can compute the $i$th row of attention as </p>
+        <h3>Standard Linear Regression</h3>
 
-        <p class="math">
-            \[
-            \Attn(x)_i = \frac{\sum_{j\in[i]}{\text{sim}(Q_i, K_j)V_j}}{\sum_{j\in[i]}{\text{sim}(Q_i, K_j)}}
-            \]
-        </p>
-
-        <p>for appropriate $\text{sim}$ (i.e. softmax is $\text{sim}(q, k) = \exp(q^{\top}k / \sqrt{d})$). Naively getting the $i$th row of output $h_i$ from the transformer would take $\bO{i^2}$ time since we also have to compute every previous key $K_j$ and value $V_j$. However, since keys and values depend only on previous tokens, we can cache them from decoding the previous $i-1$ tokens (referred to as KV-caching). Therefore, decoding the $i$th token takes $O(i)$ time, and decoding $n$ tokens takes $\bO{n^2}$. </p>
+        <p>Consider the standard linear regression setting where we have $n$ points $(x_i, y_i) \in \R^d \times \R$ for $i \in [n]$, alternatively written as $X \in \R^{n \times p}$ and $y \in \R^n$. We know the outputs are given by $y_i = X\beta^* + \epsilon_i$ for some $\beta^* \in \R^p$ where the inputs are Gaussian $x_i \sim \mathcal{N}(0, \frac{1}{d}I_d)$ and the noise is Gaussian $\epsilon_i \sim \mathcal{N}(0, \sigma^2)$. Given a dataset of $n$ points, we want to find $\beta \in \R^p$ that minimizes the squared loss $||X\beta - y||_2^2$.</p>
 
         <br>
 
-        <p>To decode $n$ tokens from a transformer starting from a context of say one token, one feeds in the one token, takes the output associated with this token, and passes it into a linear layer to determine the second token. One can now pass in these two tokens, look at the output associated with the second token, and use it to determine the third token. This is repeated until $n$ tokens are obtained. </p>
+        <p>In the underparameterized regime ($n < p$), there is a unique solution that minimizes the loss over the training data. This solution is given by the least squares solution</p>
+
+        <p class="math">
+            \begin{aligned}
+            \beta &= (X^{\top}X)^{-1}X^{\top}y & \text{[underparameterized solution]}
+            \end{aligned}
+        </p>
+
+        <p>In the overparameterized regime ($n > p$), there are many solutions that perfectly fit the training data. Gradient descent (with sufficiently small step size) will provably converge to the solution with the minimum norm. The minimum norm solution is also given by the limit of ridge regression as the weight norm penalty approaches zero. As such, we will use this specific solution to the training data to measure the error of an overparameterized model. The minimum norm solution can be explicitly written as $\beta = (X^{\top}X)^{\dagger}X^{\top}y$ where $\dagger$ denotes the Moore-Penrose pseudoinverse. Since $X^{\top}X$ is full rank in the overparameterized regime, we can rewrite this as</p>
+
+        <p class="math">
+            \begin{aligned}
+            \beta &= X^{\top}(XX^{\top})^{\dagger}y & \text{[overparameterized solution]}
+            \end{aligned}
+        </p>
+
+        <p>We can now compute the training error of the underparameterized and overparameterized models. In the paper, the authors are able to derive analytic formulas for the error of the models for $n,p \to \infty$ while keeping the ratio $p/n$ fixed. To keep a simpler picture, we simply plot the error as a function of $p/n$ for a fixed (large) $n$ for $\sigma = 1$ in Figure 2. As discussed, when we enter the overparameterized regime, the training error magically starts decreasing! This shows that the double descent phenomenon is not specific to neural networks, giving further insight into why it occurs.</p>
+
+        <figure>
+            <img src="../images/double-descent/dd_standard_linear.png" style="max-width: 80%; height: auto;">
+            <p>
+            <figcaption>Figure 2: Test error of underparameterized and overparameterized models as a function of $p/n$ for linear regression for $n = 50$. Full experimental settings in code.</figcaption>
+            </p>
+        </figure>
+
+        <h3>Latent Space Features</h3>
+
+        <p>The above setting is kind of magical thanks to its simplicity. However, it is missing some important aspects of double descent in practice. Specifically, the optimal solution lies in the underparameterized regime, not the overparameterized regime. This may be because the label generation process changes as we increase the number of parameters, potentially becoming more difficult for larger values of $p$. To address this, we will construct a latent space of fixed dimension $d$ where we sample latents $z_i \sim \mathcal{N}(0, I_d)$. Then, we generate outputs and inputs as</p>
+        
+        <p class="math">
+            \begin{aligned}
+            y_i &= \theta^{\top}z_i + \xi_i \qquad\qquad x_i = Wz_i + u_i
+            \end{aligned}
+        </p>
+            
+        <p>for $\theta \in \R^d$, $W \in \R^{d \times p}$, $\xi_i \sim \mathcal{N}(0, \sigma_{\xi}^2)$, and $u_i \sim \mathcal{N}(0, I_p)$. In this model, the (noisy) label is fully defined by the latent (by weight $\theta$) and the inputs can be interpreted as "random features" produced by the latent (by weight $W$).</p>
 
         <br>
 
-        <p>Real transformers have many necessary additions such as positional encodings and multiple attention heads. We'll intentionally ignore these to clean up the exposition. </p>
+        <p>We can now compute the error of models for different parameter counts (like the previous section, we omit the general theorems/proofs). In Figure 3, we plot the error as a function of $p/n$ for a fixed (large) $n$ for $\sigma_{\xi} = 1$ and Gaussian $\theta, W$. As before, we see that the training error decreasing past the transition point $p/n = 1$. Interestingly, the lowest test loss is achieved by sending $p \to \infty$ for a fixed $n$! This shows that overparameterization is optimal for this latent space regression, not just for neural networks.</p>
 
-        <h3>(Linear) Transformers are RNN's</h3>
-
-        <h4>Pure Linear Case</h4>
-
-        <p>Consider dropping the $\text{softmax}$ in $\Attn$. Then, </p>
-
-        <p class="math">
-            \begin{aligned}
-            \Attn(x) &= (QK^{\top})V \\
-            \Attn(x)_i &= \frac{\sum_{j\in[i]}{(Q_i^{\top}K_j)V_j}}{\sum_{j\in[i]}{(Q_i^{\top}K_j)}}
-            \end{aligned}
-        </p>
-
-        <p>At first glance, this still seems like $\bO{i}$ compute for the $i$th token. However, a simple application of the associate property solves all of our problems :))</p>
-
-        <p class="math">
-            \begin{aligned}
-            \Attn(x) &= Q(K^{\top}V) \\
-            \Attn(x)_i &= \frac{Q_i^{\top}\sum_{j\in[i]}{K_jV_j}}{Q_i^{\top}\sum_{j\in[i]}{K_j}}
-            \end{aligned}
-        </p>
-
-        <p>Notably, we can efficiently compute $\sum_{j\in[i]}{K_jV_j}$ and $\sum_{j\in[i]}{K_j}$ by saving $\sum_{j\in[i-1]}{K_jV_j}$ and $\sum_{j\in[i-1]}{K_j}$ from decoding the previous token. This takes decoding the $i$th token from $\bO{i}$ time to $\bO{1}$ time! Now, at the loss of the softmax non-linearity, we can get the training efficiency of transformers with the decoding speed of transformers! </p>
-
-        <h4>Kernel similarity</h4>
-
-        <p>Our victory only requires that we can apply the associative property to multiply keys $K_j$ and values $V_j$ before applying $\text{sim}$. Therefore, we can still keep non-linearity as long as $\text{sim}$ can be seperately applied to queries $Q_i$ and keys $K_j$. We can generalize our fast linear attention by defining similarity as $\text{sim}(q, k) = \phi(q)^{\top} \phi(k)$ for kernel function $\phi : \R^{k} \to \R^{k'}$ via</p>
-
-        <p class="math">
-            \begin{aligned}
-            \Attn(x) &= \phi(Q)(\phi(K)^{\top}V) \\
-            \Attn(x)_i &= \frac{\phi(Q_i)^{\top}\sum_{j\in[i]}{\phi(K_j)V_j}}{\phi(Q_i)^{\top}\sum_{j\in[i]}{\phi(K_j)}}
-            \end{aligned}
-        </p>
-
-        <p>The paper finds that using $\phi(x) = \text{elu}(x) + 1$ performs well empirically ($\text{elu}$ defined in <cite><a href="https://arxiv.org/abs/1511.07289">(Clevert et al, 2016)</a></cite>). </p>
+        <figure>
+            <img src="../images/double-descent/dd_latent_space.png" style="max-width: 80%; height: auto;">
+            <p>
+            <figcaption>Figure 3: Test error of underparameterized and overparameterized models as a function of $p/n$ for latent space features for $n = 50, d= 20$. Full experimental settings in code.</figcaption>
+            </p>
+        </figure>
  
         <h3>Summary</h3>
 
-        <p>Transformers are generally considered to be very different from RNN's and are slower at inference. Interestingly, a simple modification of the attention mechanism collapses a transformer into an RNN that takes constant time to decode each token while preserving training parallelism. </p>
+        <p>It seems that gradient descent magically finds generalizing solutions in the space of interpolating models. This shows that the classical bias-variance trade-off is a flawed picture of model performance. Moreover, all it takes is linear regression to observe this phenomenon. I hope this post was helpfil in building intuition, and I highly recommend reading some of the original papers in this space to understand the full picture. Thank you for reading, and feel free to reach out with any questions or thoughts!</p>
 
-        <br>
+        <h3>Code</h3>
 
-        <p>The original work has some (now dated) evidence that this is faster than standard transformer infernece. The line of work on SSM's and Mamba has scaled this conceptual approach to real workloads, making it feasible to train models that are much faster for autoregressive inference. This is especially promising for tasks that require long context lengths such as code generation and DNA sequencing. </p>
-
-        <br>
-
-        <p>From a scientific perspective, this shows how transformers may not be as "special" as previously thought. For example <cite><a href="https://arxiv.org/abs/2310.01082">Ahn et al, 2024</a></cite> shows that transformer optimization is qualitatively similar for linear attention, which we know are effectively RNN's. This adds to the growing evidence that one should select architectures that most effectively leverage compute instead of searching for special implicit biases. </p>
-
-        <br>
-
-        <p>I'm a huge fan of the simplicity and exposition of this paper, clearly communicating a profound observation that has inspired future architecture research. Thank you for reading, and feel free to reach out with any questions or thoughts!</p>
+        <p>The code for this post is available <a href="https://github.com/suhas-kotha/double-descent">here</a>.</p>
 
         <script type="text/javascript" src="../js/post.js"></script>
     </div>
