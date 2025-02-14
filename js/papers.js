@@ -7,11 +7,10 @@ function renderPapers() {
         } else {
             codeLinkTag = ``
         }
-        if (showOnlySelected && !selected) {
-            return ``;
-        }
+        // Add purple heart for previously selected papers
+        const heartPrefix = selected ? "💜 " : "";
         return `
-            <p style="text-align: left"><a href="${link}">${title}</a></p>
+            <p style="text-align: left"><a href="${link}">${heartPrefix}${title}</a></p>
             <p style="font-size:0.65em">
                 ${authors.join(', ')}
                 <br> <i>${conference}</i>&nbsp&nbsp<a href="${link}">[arxiv]</a> ${codeLinkTag}
@@ -21,9 +20,17 @@ function renderPapers() {
     // make a list of papers
     let papers = [
         generatePaperHTML(
+            "Understanding Catastrophic Forgetting in Language Models via Implicit Inference",
+            ["Suhas Kotha", "Jacob Mitchell Springer", "Aditi Raghunathan"],
+            "ICLR 2024",
+            "https://arxiv.org/abs/2309.10105",
+            "https://github.com/kothasuhas/understanding-forgetting",
+            true
+        ),
+        generatePaperHTML(
             "Repetition Improves Language Model Embeddings", 
             ["Jacob Mitchell Springer", "Suhas Kotha", "Daniel Fried", "Graham Neubig", "Aditi Raghunathan"], 
-            "Preprint 2024", 
+            "ICLR 2025", 
             "https://arxiv.org/abs/2402.15449",
             "https://github.com/jakespringer/echo-embeddings",
             true
@@ -31,7 +38,7 @@ function renderPapers() {
         generatePaperHTML(
             "Jailbreaking is Best Solved by Definition",
             ["Taeyoun Kim<sup>*</sup>", "Suhas Kotha<sup>*</sup>", "Aditi Raghunathan"],
-            "Preprint 2024",
+            "NeurIPS SafeAI Workshop 2024",
             "https://arxiv.org/abs/2403.14725",
             "https://github.com/kothasuhas/purple-problem",
             false
@@ -45,20 +52,12 @@ function renderPapers() {
             false
         ),
         generatePaperHTML(
-            "Understanding Catastrophic Forgetting in Language Models via Implicit Inference",
-            ["Suhas Kotha", "Jacob Mitchell Springer", "Aditi Raghunathan"],
-            "ICLR 2024",
-            "https://arxiv.org/abs/2309.10105",
-            "https://github.com/kothasuhas/understanding-forgetting",
-            true
-        ),
-        generatePaperHTML(
             "Provably Bounding Neural Network Preimages",
             ["Suhas Kotha<sup>*</sup>", "Christopher Brix<sup>*</sup>", "Zico Kolter", "Krishnamurthy Dvijotham<sup>†</sup>", "Huan Zhang<sup>†</sup>"],
             "NeurIPS 2023 (Spotlight)",
             "https://arxiv.org/abs/2302.01404",
             "https://github.com/kothasuhas/verify-input",
-            true
+            false
         ),
     ];
 
@@ -73,5 +72,3 @@ function renderPapers() {
 }
 
 renderPapers()
-document.getElementById('trueButton').addEventListener('click', function() {showOnlySelected = true ; renderPapers();})
-document.getElementById('falseButton').addEventListener('click', function() {showOnlySelected = false ; renderPapers();})
