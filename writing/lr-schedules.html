@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en" id="html">
+
+<head>
+    <meta charset="utf-8">
+    <title>Suhas Kotha</title>
+    <!-- <script src="jquery-3.6.3.min.js"></script> -->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script type="text/x-mathjax-config">
+        MathJax.Hub.Config({
+          tex2jax: {
+            inlineMath: [['$', '$'], ['\\(', '\\)']],
+            displayMath: [['$$', '$$'], ['\\[', '\\]']],
+            processEscapes: true
+          }
+        });
+    </script>
+    <script type="text/javascript" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-MML-AM_CHTML"></script>
+    </script>
+    <meta name="description" content="Some Intuition Behind Double Descent">
+    <meta name="author" content="Suhas Kotha">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href='https://fonts.googleapis.com/css?family=Quicksand' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" href="../css/style.css?v=<?php echo rand(); ?>">
+    <link rel="icon" type="image/png" href="../images/dragon_logo.png">
+    <style id="autogen"></style>
+</head>
+
+<body style="max-width: 100%; margin: 0 auto;">
+    <p><a href=../index.html>Home</a></p>
+    <div class="blog-post">
+        <br>
+
+        <h1>Convex Optimization Theory Agrees with Learning Rate Scheduling</h1>
+
+        \(
+        \def\R{\mathbb{R}}
+        \def\wavg#1{\overline{f(x_{#1:T})}}
+        \)
+
+        <br>
+        <p style="text-align: center;">2/27/2025</p>
+        <br>
+
+        <p> Learning rate schedules nontrivially shape the trajectory of model training as seen in the below figure. The most relevant example is the WSD schedule, which keeps a constant learning rate until it linearly decays to zero at the end of training. Practitioners have observed that the loss under this schedule (Figure 1, left) decreases slower than a standard cosine schedule until the learning rate decays, at which point the loss sharply decreases <cite><a href="https://arxiv.org/abs/2404.06395">(Hu et al, 2024)</a></cite>.</p>
+
+        <figure>
+            <img src="../images/lr-schedules/wsd-bounds.png" style="max-width: 80%; height: auto;">
+            <p>
+            <figcaption>Figure 1: Taken from <cite><a href="https://arxiv.org/abs/2501.18965">Schaipp et al, 2025</a></cite></figcaption>
+            </p>
+        </figure>
+
+        <p>Why does this happen? The recent amazing papers <cite><a href="https://arxiv.org/abs/2310.07831">Defazio et al, 2024</a></cite> and <cite><a href="https://arxiv.org/abs/2501.18965">Schaipp et al, 2025</a></cite> shed some light on this question by finding an extremely simple toy model which replicates these empirical phenomena. The theorem maps a sequence of learning rates and expected gradient norms to an upper bound on the loss over the course of training. Their proof relies on a simple trick to extend a classical convex optimization result to the final iterate of a variable learning rate schedule. </p>
+
+        <br>
+            
+        <p>Though the theorem gives a loose upper bound (that gets worse the further your function is from linear), it ends up correctly predicting the "shape" of the loss curve over the course of training (Figure 1, right). The original papers contain a simple proof and detailed discussion of empirical results; this post is dedicated to a personally more intuitive version of the proof. I am very impressed at the predictive nature of this toy model and hope you find it interesting as well! </p>
+
+        <h3>Setup</h3>
+
+        <p>Suppose we have training samples $s \in \mathcal{S}$ with parameters $x \in \R^d$. We'll consider a loss function $f : \R^D \times \mathcal{S} \to \R$ that computes the loss of the parameters for a single sample. We will overload notation and let $f : \R^d \to \R$ be the expected loss of the parameters, defined as $f(x) = \mathbb{E}_{s \sim \mathcal{P_S}}[f(x, s)]$. We note that the gradient $g_t = \nabla f(x_t, s_t)$ is random over the choice of training sample. The learning rate at time $t$ will be given by $\eta_t \in \R^+$. Our training trajectory is then given by the update</p>
+
+        <p class="math">
+            \begin{aligned}
+            x_{t+1} &= x_t - \eta_t g_t
+            \end{aligned}
+        </p>
+
+        <p>We assume that the loss function is convex, which means</p>
+
+        <p class="math">
+            \begin{aligned}
+            f(y) - f(x_t) \geq \langle g_t, y - x_t \rangle
+            \end{aligned}
+        </p>
+
+        <h3>Theorem</h3>
+
+        <p>Take the optimal parameters $x_*$ and define $D := ||x_1 - x_*||_2$. Then, the loss of the final iterate is close to the optimal loss.</p>
+
+        <p class="math">
+            \begin{aligned}
+            \mathbb{E}[f(x_T) - f(x_*)] \leq & \frac{1}{2\sum_{t=1}^{T} \eta_t} \left[D^2 + \sum_{t=1}^{T} \eta_t^2 ||g_t||_2^2\right] \\
+            + & \frac{1}{2} \sum_{k=1}^{T-1} \frac{\eta_k}{\sum_{t=k+1}^{T} \eta_t} \left(\frac{1}{\sum_{t=k}^{T} \eta_t} \sum_{t=k}^{T} \eta_t ||g_t||_2^2\right)
+            \end{aligned}
+        </p>
+
+        <p>We will first go over the proof. If you want to skip directly to the application of this proof, you can go <a href="#application">here</a>.</p>
+
+        <h3>Proof</h3>
+
+        <p>The proof hinges on a key lemma that bounds the average loss of the parameters over time (weighted by the learning rate schedule); the bound only requires the convexity of the loss function. The papers' contribution is to cleverly apply this result to bound the loss of the final iterate. </p>
+
+        <br>
+
+        <p>As a useful intermediate quantity, we will define the weighted average loss of the parameters over time as</p>
+
+        <p class="math">
+            \begin{aligned}
+            \wavg{k} := \frac{\sum_{t=k}^{T} \eta_t f(x_t)}{\sum_{t=k}^{T} \eta_t}
+            \end{aligned}
+        </p>
+
+        <h4>Bounding average loss of iterates</h4>
+
+        <p>For reference parameters $u \in \R^d$, we want to bound the average loss of the parameters with respect to $u$. The following lemma bounds $\wavg{1} - f(u)$ by initial distance from $u$ and the gradient norms of each step.</p>
+
+        <br>
+
+        <p>Lemma 1: For any $u \in \R^d$ and any training trajectory $x_t, \eta_t, g_t$,</p>
+
+        <p class="math">
+            \begin{aligned}
+            \sum_{t\in[T]} \eta_t \mathbb{E}[f(x_t) - f(u)] \leq \frac{1}{2} \mathbb{E} ||x_1 - u||_2^2 + \frac{1}{2}  \sum_{t=1}^{T} \eta_t^2 \mathbb{E} ||g_t||_2^2
+            \end{aligned}
+        </p>
+
+        <p>Proof: Full proof is in <a href="#proof-of-lemma-1">Appendix A.1</a>.</p>
+        
+        <h4>Bounding loss of final iterate</h4>
+
+        <p>How can we use this to bound the loss of the final iterate, given by $\mathbb{E}[f(x_T) - f(x_*)]$? To handle this, we will first introduce the average iterate we saw in the previous lemma.</p>
+
+        <p class="math">
+            \begin{aligned}
+            \mathbb{E}\left[f(x_T) - f(x_*)\right] = \mathbb{E}\left[f(x_T) - \wavg{1}\right] + \mathbb{E}\left[\wavg{1} - f(x_*)\right]
+            \end{aligned}
+        </p>
+
+        <p>The second term is exactly handled by the previous lemma. We now focus on the first term. A priori, it seems difficult to apply our previous lemma because the average iterate is on the wrong side of the subtraction. To handle this, <cite><a href="https://arxiv.org/abs/2310.07831">Defazio et al, 2024</a></cite> cleverly rearranges this term as distances of average iterates from $x_k$ for $k \in [T-1]$. We will prove this in the next lemma.</p>
+
+        <br>
+
+        <p>Lemma 2: For any sequence $x_t, \eta_t$ (not necessarily a training trajectory),</p>
+
+        <p class="math">
+            \begin{aligned}
+            f(x_T) - \wavg{1} = \sum_{k=1}^{T-1} \frac{\eta_k}{\sum_{t=k+1}^{T} \eta_t} \left(\wavg{k} - f(x_k)\right)
+            \end{aligned}
+        </p>
+
+        <p>Proof: For a brief explanation, each term of the summation is simply $\wavg{k+1} - \wavg{k}$, telescoped to give us $\wavg{T} - \wavg{1} = f(x_T) - \wavg{1}$. The full proof is in <a href="#proof-of-lemma-2">Appendix A.2</a>.</p>
+
+        <br>
+
+        <p>After rewriting, we can apply our previous lemma to bound the $k$th term of the sum by setting $u = x_k$ and simulating the training trajectory from $x_k$ to $x_T$. This results in the initial distance being zero, resulting in the trajectory being bounded by the gradient norms of each step. Putting everything together, we get the following bound.</p>
+
+        <p class="math">
+            \begin{aligned}
+            \mathbb{E}\left[f(x_T) - f(x_*)\right] = & \mathbb{E}\left[f(x_T) - \wavg{1}\right] + \mathbb{E}\left[\wavg{1} - f(x_*)\right] \\
+            = & \sum_{k=1}^{T-1} \frac{\eta_k}{\sum_{t=k+1}^{T} \eta_t} \mathbb{E}\left[\wavg{k} - f(x_k)\right] + \mathbb{E}\left[\wavg{1} - f(x_*)\right]\\
+            \leq & \frac{1}{2} \sum_{k=1}^{T-1} \frac{\eta_k}{\sum_{t=k+1}^{T} \eta_t} \left(\frac{1}{\sum_{t=k}^{T} \eta_t} \sum_{t=k}^{T} \eta_t ||g_t||_2^2\right) \\
+            + & \frac{1}{2\sum_{t=1}^{T} \eta_t} \left[D^2 + \sum_{t=1}^{T} \eta_t^2 ||g_t||_2^2\right]
+            \end{aligned}
+        </p>
+
+        <p>This completes the proof :))</p>
+        
+        <h3 id="application">Application</h3>
+
+        <p>Due to empirical observation, the paper assumes that the gradient norm is constant over time ($||g_t||_2 = G$). With this assumption, we can derive a closed form expression for the loss of the final iterate. As discussed in the introduction, the shape of the bound closely matches empirical loss curves for WSD and cosine schedules. The paper also discusses many settings where this theorem correctly prescribes an action to take in practice. We'll work through the simplest one: tuning the learning rate for a fixed schedule.</p>
+
+        <br>
+
+        <p>We will rewrite the learning rate $\eta_t$ as $\gamma * \mu_t$ where $\gamma$ is the maximum learning rate and $\mu_t \in [0, 1]$ is a normalized learning rate schedule. Then, we can rewrite the theorem as</p>
+        
+        <p class="math">
+            \begin{aligned}
+            \mathbb{E}[f(x_T) - f(x_*)] \leq & \frac{1}{2\gamma \sum_{t=1}^{T} \mu_t} \left[D^2 + \gamma^2 \sum_{t=1}^{T} \mu_t^2 G\right] \\
+            + & \frac{\gamma}{2} \sum_{k=1}^{T-1} \frac{\mu_k}{\sum_{t=k+1}^{T} \mu_t} \left(\frac{1}{\sum_{t=k}^{T} \mu_t} \sum_{t=k}^{T} \mu_t G\right)
+            \end{aligned}
+        </p>
+        
+        <p>Under this parameterization, we can rewrite the bound as $\frac{\mathcal{T}_1}{\gamma} + \mathcal{T}_2\gamma$ for expressions $\mathcal{T}_1, \mathcal{T}_2$ that only depend on the learning rate schedule. Therefore, for a given schedule, the bound prescribes using learning rate $\gamma = \sqrt{\frac{\mathcal{T}_1}{\mathcal{T}_2}}$. Obviously, this will be off by important constants. However, it does predict the scaling behavior of optimal learning rates. For example, if I doubled the duration of training with the same schedule, $\mathcal{T}_1$ would stay fixed while $\mathcal{T}_2$ would double, so the optimal learning rate would decrease by a factor of $\sqrt{2}$. This is exactly what people observe in practice <cite><a href="https://arxiv.org/abs/2408.13359">(Shen et al, 2024)</a></cite>! You can look at the paper for more examples (the optimal cooldown duration for WSD is the entire training duration, you can transition between learning rates smoother, etc.).</p>
+
+        <h3>Conclusion</h3>
+
+        <p>This toy model is extremely simple yet predictive of how learning rate schedules shape the training trajectory. In some preliminary experiments, I found that the bound makes some accurate predictions regarding the optimal data ordering where data points differ in their expected gradient norms, but that's for another post. Thank you for reading, and feel free to reach out with any questions or thoughts!</p>
+
+        <h3>Appendix</h3>
+
+        <h4 id="proof-of-lemma-1">A.1: Proof of Lemma 1</h4>
+
+        <p>Lemma 1: For any $u \in \R^d$ and any training trajectory $x_t, \eta_t, g_t$,</p>
+
+        <p class="math">
+            \begin{aligned}
+            \sum_{t\in[T]} \eta_t \mathbb{E}[f(x_t) - f(u)] \leq \frac{1}{2} \mathbb{E} ||x_1 - u||_2^2 + \frac{1}{2}  \sum_{t=1}^{T} \eta_t^2 \mathbb{E} ||g_t||_2^2
+            \end{aligned}
+        </p>
+
+        <p>Proof: We relate the gradient norm of each step to the distance from the reference parameter $u$.</p>
+
+        <p class="math">
+            \begin{aligned}
+            \mathbb{E}||x_{t+1} - u||_2^2 &= \mathbb{E}||x_t - \eta_t g_t - u||_2^2 \\
+            &= \mathbb{E}[||x_t - u||_2^2 - 2\eta_t \langle g_t, x_t - u \rangle + \eta_t^2 ||g_t||_2^2] \\
+            &\leq \mathbb{E}[||x_t - u||_2^2 - 2\eta_t (f(x_t) - f(u)) + \eta_t^2 ||g_t||_2^2] && \text{[convexity]}
+            \end{aligned}
+        </p>
+
+        <p>The last inequality uses convexity of $f$. Rearranging terms,</p>
+
+        <p class="math">
+            \begin{aligned}
+            2\eta_t \mathbb{E}[f(x_t) - f(u)] &\leq \mathbb{E}[||x_t - u||_2^2] - \mathbb{E}[||x_{t+1} - u||_2^2] + \eta_t^2 \mathbb{E}[||g_t||_2^2]
+            \end{aligned}
+        </p>
+
+        <p>Summing over $t \in [T]$ gives a telescoping series for the distances:</p>
+
+        <p class="math">
+            \begin{aligned}
+            2\sum_{t=1}^T \eta_t \mathbb{E}[f(x_t) - f(u)] &\leq \mathbb{E}[||x_1 - u||_2^2] - \mathbb{E}[||x_{T+1} - u||_2^2] + \sum_{t=1}^T \eta_t^2 \mathbb{E}[||g_t||_2^2] \\
+            &\leq \mathbb{E}[||x_1 - u||_2^2] + \sum_{t=1}^T \eta_t^2 \mathbb{E}[||g_t||_2^2]
+            \end{aligned}
+        </p>
+
+        <p>Dividing both sides by 2 gives the desired result.</p>
+
+        <h4 id="proof-of-lemma-2">A.2: Proof of Lemma 2</h4>
+
+        <p>Lemma 2: For any sequence $x_t, \eta_t$ (not necessarily a training trajectory),</p>
+
+        <p class="math">
+            \begin{aligned}
+            f(x_T) - \wavg{1} = \sum_{k=1}^{T-1} \frac{\eta_k}{\sum_{t=k+1}^{T} \eta_t} \left(\wavg{k} - f(x_k)\right)
+            \end{aligned}
+        </p>
+
+        <p>Proof: Our goal with this lemma is to rewrite $f(x_T) - \wavg{1}$ as a sum of terms of the form $\wavg{k} - f(x_k)$. To shed some light on this term, we note that each term of the summation is actually $\wavg{k+1} - \wavg{k}$, telescoped to give us $\wavg{T} - \wavg{1} = f(x_T) - \wavg{1}$. In the lemma statement, the $k$th term of the summation is peeling off $x_k$ from $\wavg{1}$ by matching it to an appropriate weighted average. This continues until we have peeled off all the $x_k$ from $\wavg{1}$. </p>
+
+        <br>
+
+        <p>As for a rigorous proof, it suffices to show that the $k$th term of the summation is $\wavg{k+1} - \wavg{k}$. We directly compute this term:</p>
+
+        <p class="math">
+            \begin{aligned}
+            \wavg{k+1} - \wavg{k} &= \frac{\sum_{t=k+1}^{T} \eta_t f(x_t)}{\sum_{t=k+1}^{T} \eta_t} - \frac{\sum_{t=k}^{T} \eta_t f(x_t)}{\sum_{t=k}^{T} \eta_t} \\
+            &= \frac{\sum_{t=k+1}^{T} \eta_t f(x_t)}{\sum_{t=k+1}^{T} \eta_t} - \frac{\eta_k f(x_k) + \sum_{t=k+1}^{T} \eta_t f(x_t)}{\eta_k + \sum_{t=k+1}^{T} \eta_t} \\
+            &= \frac{(\sum_{t=k+1}^{T} \eta_t f(x_t))(\eta_k + \sum_{t=k+1}^{T} \eta_t) - (\eta_k f(x_k) + \sum_{t=k+1}^{T} \eta_t f(x_t))(\sum_{t=k+1}^{T} \eta_t)}{(\sum_{t=k+1}^{T} \eta_t)(\eta_k + \sum_{t=k+1}^{T} \eta_t)} \\
+            &= \frac{\eta_k\sum_{t=k+1}^{T} \eta_t f(x_t) - \eta_k f(x_k)\sum_{t=k+1}^{T} \eta_t}{(\sum_{t=k+1}^{T} \eta_t)(\eta_k + \sum_{t=k+1}^{T} \eta_t)} \\
+            &= \frac{\eta_k\sum_{t=k}^{T} \eta_t f(x_t) - \eta_k f(x_k)\sum_{t=k}^{T} \eta_t}{(\sum_{t=k+1}^{T} \eta_t)(\sum_{t=k}^{T} \eta_t)} \\
+            &= \frac{\eta_k}{\sum_{t=k+1}^{T} \eta_t} \left(\frac{\sum_{t=k}^{T} \eta_t f(x_t)}{\sum_{t=k}^{T} \eta_t} - f(x_k)\right) \\
+            &= \frac{\eta_k}{\sum_{t=k+1}^{T} \eta_t} \left(\wavg{k} - f(x_k)\right)
+            \end{aligned}
+        </p>
+
+        <p>Therefore, summing over $k \in [T-1]$ gives us a telescoping series:</p>
+
+        <p class="math">
+            \begin{aligned}
+            \sum_{k=1}^{T-1} \frac{\eta_k}{\sum_{t=k+1}^{T} \eta_t} \left(\wavg{k} - f(x_k)\right) &= \sum_{k=1}^{T-1} (\wavg{k+1} - \wavg{k}) \\
+            &= \wavg{T} - \wavg{1} \\
+            &= f(x_T) - \wavg{1}
+            \end{aligned}
+        </p>
+
+        <p>And we're done!</p>
+
+        <script type="text/javascript" src="../js/post.js"></script>
+    </div>
+</body>
+
+</html>
+
+
+<!-- publish link: http://www.andrew.cmu.edu/server/publish.html -->
