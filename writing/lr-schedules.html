@@ -42,24 +42,29 @@
         <p style="text-align: center;">2/27/2025</p>
         <br>
 
-        <p> Learning rate schedules nontrivially shape the trajectory of model training as seen in the below figure. The most relevant example is the WSD schedule, which keeps a constant learning rate until it linearly decays to zero at the end of training. Practitioners have observed that the loss under this schedule (Figure 1, left) decreases slower than a standard cosine schedule until the learning rate decays, at which point the loss sharply decreases <cite><a href="https://arxiv.org/abs/2404.06395">(Hu et al, 2024)</a></cite>.</p>
+        <p> Learning rate schedules nontrivially shape the trajectory of model training as seen in the below figure. The most relevant example is the Warmup-Stable-Decay (WSD) schedule, which keeps a constant learning rate until it linearly decays to zero at the end of training (Figure 1, left). Practitioners have observed that the loss under this schedule (Figure 1, right) decreases slower than a standard cosine schedule until the learning rate decays, at which point the loss sharply decreases <cite><a href="https://arxiv.org/abs/2404.06395">(Hu et al, 2024)</a></cite>.</p>
 
         <figure>
-            <img src="../images/lr-schedules/wsd-bounds.png" style="max-width: 80%; height: auto;">
+            <img src="../images/lr-schedules/lr-schedules.png" style="height: 250px;"> <img src="../images/lr-schedules/real-loss-curves.png" style="height: 250px;">
             <p>
-            <figcaption>Figure 1: Taken from <cite><a href="https://arxiv.org/abs/2501.18965">Schaipp et al, 2025</a></cite></figcaption>
+            <figcaption>Figure 1: Left: examples of WSD and cosine learning rate schedules. Right: loss curves for language models trained with WSD and cosine schedules (the schedules used in the right plot are not from the left plot). Taken from <cite><a href="https://arxiv.org/abs/2501.18965">Schaipp et al, 2025</a></cite></figcaption>
             </p>
         </figure>
 
         <p>Why does this happen? The recent amazing papers <cite><a href="https://arxiv.org/abs/2310.07831">Defazio et al, 2024</a></cite> and <cite><a href="https://arxiv.org/abs/2501.18965">Schaipp et al, 2025</a></cite> shed some light on this question by finding an extremely simple toy model which replicates these empirical phenomena. The theorem maps a sequence of learning rates and expected gradient norms to an upper bound on the loss over the course of training. Their proof relies on a simple trick to extend a classical convex optimization result to the final iterate of a variable learning rate schedule. </p>
 
-        <br>
+        <figure>
+            <img src="../images/lr-schedules/predicting-wsd-theory.png" style="max-width: 80%; height: auto;">
+            <p>
+            <figcaption>Figure 2: Taken from <cite><a href="https://arxiv.org/abs/2501.18965">Schaipp et al, 2025</a></cite></figcaption>
+            </p>
+        </figure>
             
-        <p>Though the theorem gives a loose upper bound (that gets worse the further your function is from linear), it ends up correctly predicting the "shape" of the loss curve over the course of training (Figure 1, right). The original papers contain a simple proof and detailed discussion of empirical results; this post is dedicated to a personally more intuitive version of the proof. I am very impressed at the predictive nature of this toy model and hope you find it interesting as well! </p>
+        <p>Though the theorem gives a loose upper bound (that gets worse for more non-linear functions), it ends up correctly predicting the "shape" of the loss curve over the course of real training (Figure 2). The predictive nature is incredibly impressive; even though deep learning models and algorithms are incredibly non-convex, this toy model shows that this complexity is not necessary to induce the phenomenon of interest. The original papers contain a simple proof and detailed discussion of empirical results; this post is dedicated to a personally more intuitive version of the proof. I am very impressed at the predictive nature of this toy model and hope you find it interesting as well! </p>
 
         <h3>Setup</h3>
 
-        <p>Suppose we have training samples $s \in \mathcal{S}$ with parameters $x \in \R^d$. We'll consider a loss function $f : \R^D \times \mathcal{S} \to \R$ that computes the loss of the parameters for a single sample. We will overload notation and let $f : \R^d \to \R$ be the expected loss of the parameters, defined as $f(x) = \mathbb{E}_{s \sim \mathcal{P_S}}[f(x, s)]$. We note that the gradient $g_t = \nabla f(x_t, s_t)$ is random over the choice of training sample. The learning rate at time $t$ will be given by $\eta_t \in \R^+$. Our training trajectory is then given by the update</p>
+        <p>Suppose we have training samples $s \in \mathcal{S}$ with parameters $x \in \R^d$. We'll consider a loss function $f : \R^D \times \mathcal{S} \to \R$ that computes the loss of the parameters for a single sample. We will overload notation and let $f : \R^d \to \R$ be the expected loss of the parameters, defined as $f(x) = \mathbb{E}_{s \sim \mathcal{P_S}}[f(x, s)]$. We note that the gradient $g_t = \nabla f(x_t, s_t)$ is random over the choice of training sample $s_t$. The learning rate at time $t$ will be given by $\eta_t \in \R^+$. Our training trajectory is then given by the update</p>
 
         <p class="math">
             \begin{aligned}
@@ -67,7 +72,7 @@
             \end{aligned}
         </p>
 
-        <p>We assume that the loss function is convex, which means</p>
+        <p>where $x_{t+1}$ is also random over the choice of training sample. We assume that the loss function is convex, which means</p>
 
         <p class="math">
             \begin{aligned}
@@ -77,7 +82,7 @@
 
         <h3>Theorem</h3>
 
-        <p>Take the optimal parameters $x_*$ and define $D := ||x_1 - x_*||_2$. Then, the loss of the final iterate is close to the optimal loss.</p>
+        <p>Take the optimal parameters $x_*$ and define $D := ||x_1 - x_*||_2$. Then, the theorem bounds how far the loss of the final iterate is from optimal.</p>
 
         <p class="math">
             \begin{aligned}
@@ -98,13 +103,13 @@
 
         <p class="math">
             \begin{aligned}
-            \wavg{k} := \frac{\sum_{t=k}^{T} \eta_t f(x_t)}{\sum_{t=k}^{T} \eta_t}
+            \wavg{k} := \frac{\sum_{t=k}^{T} \eta_t \mathbb{E}[f(x_t)]}{\sum_{t=k}^{T} \eta_t}
             \end{aligned}
         </p>
 
         <h4>Bounding average loss of iterates</h4>
 
-        <p>For reference parameters $u \in \R^d$, we want to bound the average loss of the parameters with respect to $u$. The following lemma bounds $\wavg{1} - f(u)$ by initial distance from $u$ and the gradient norms of each step.</p>
+        <p>For reference parameters $u \in \R^d$, we want to bound the average loss of the parameters with respect to $u$, or $\wavg{1} - f(u)$. The following lemma bounds $(\sum_{t\in[T]} \eta_t)(\wavg{1} - f(u))$, which simplifies to $\sum_{t\in[T]} \eta_t \mathbb{E}[f(x_t) - f(u)]$. This bound involves the initial distance from $u$ and the gradient norms of each step.</p>
 
         <br>
 
@@ -116,7 +121,7 @@
             \end{aligned}
         </p>
 
-        <p>Proof: Full proof is in <a href="#proof-of-lemma-1">Appendix A.1</a>.</p>
+        <p>Proof: The proof uses the convexity of $f$ to relate the gradient norm of each step to the distance from the reference parameter $u$. The full proof is in <a href="#proof-of-lemma-1">Appendix A.1</a>.</p>
         
         <h4>Bounding loss of final iterate</h4>
 
@@ -128,7 +133,7 @@
             \end{aligned}
         </p>
 
-        <p>The second term is exactly handled by the previous lemma. We now focus on the first term. A priori, it seems difficult to apply our previous lemma because the average iterate is on the wrong side of the subtraction. To handle this, <cite><a href="https://arxiv.org/abs/2310.07831">Defazio et al, 2024</a></cite> cleverly rearranges this term as distances of average iterates from $x_k$ for $k \in [T-1]$. We will prove this in the next lemma.</p>
+        <p>The second term is exactly handled by the previous lemma for $u = x_*$. We now focus on the first term. A priori, it seems difficult to apply our previous lemma because the average iterate is on the wrong side of the subtraction. To handle this, <cite><a href="https://arxiv.org/abs/2310.07831">Defazio et al, 2024</a></cite> cleverly rearranges this term as distances of average iterates from $x_k$ for $k \in [T-1]$. We will prove this in the next lemma.</p>
 
         <br>
 
@@ -140,7 +145,7 @@
             \end{aligned}
         </p>
 
-        <p>Proof: For a brief explanation, each term of the summation is simply $\wavg{k+1} - \wavg{k}$, telescoped to give us $\wavg{T} - \wavg{1} = f(x_T) - \wavg{1}$. The full proof is in <a href="#proof-of-lemma-2">Appendix A.2</a>.</p>
+        <p>Proof: For a brief explanation, each term of the summation is equivalent to $\wavg{k+1} - \wavg{k}$, telescoped to give us $\wavg{T} - \wavg{1} = f(x_T) - \wavg{1}$. The full proof is in <a href="#proof-of-lemma-2">Appendix A.2</a>.</p>
 
         <br>
 
@@ -159,11 +164,11 @@
         
         <h3 id="application">Application</h3>
 
-        <p>Due to empirical observation, the paper assumes that the gradient norm is constant over time ($||g_t||_2 = G$). With this assumption, we can derive a closed form expression for the loss of the final iterate. As discussed in the introduction, the shape of the bound closely matches empirical loss curves for WSD and cosine schedules. The paper also discusses many settings where this theorem correctly prescribes an action to take in practice. We'll work through the simplest one: tuning the learning rate for a fixed schedule.</p>
+        <p>Due to empirical observation, the paper assumes that the gradient norm is constant over time ($\mathbb{E}||g_t||^2_2 = G$). With this assumption, we can derive a closed form expression for the loss of the final iterate. As discussed in the introduction, the shape of the bound closely matches empirical loss curves for WSD and cosine schedules. The paper also discusses many settings where this theorem correctly prescribes an action to take in practice. We'll work through the simplest one: tuning the learning rate for a fixed schedule.</p>
 
         <br>
 
-        <p>We will rewrite the learning rate $\eta_t$ as $\gamma * \mu_t$ where $\gamma$ is the maximum learning rate and $\mu_t \in [0, 1]$ is a normalized learning rate schedule. Then, we can rewrite the theorem as</p>
+        <p>We will rewrite the learning rate $\eta_t$ as $\gamma * \mu_t$ where $\gamma$ is the maximum learning rate and $\mu_t \in [0, 1]$ is a normalized learning rate schedule. Then, the theorem becomes</p>
         
         <p class="math">
             \begin{aligned}
@@ -172,11 +177,11 @@
             \end{aligned}
         </p>
         
-        <p>Under this parameterization, we can rewrite the bound as $\frac{\mathcal{T}_1}{\gamma} + \mathcal{T}_2\gamma$ for expressions $\mathcal{T}_1, \mathcal{T}_2$ that only depend on the learning rate schedule. Therefore, for a given schedule, the bound prescribes using learning rate $\gamma = \sqrt{\frac{\mathcal{T}_1}{\mathcal{T}_2}}$. Obviously, this will be off by important constants. However, it does predict the scaling behavior of optimal learning rates. For example, if I doubled the duration of training with the same schedule, $\mathcal{T}_1$ would stay fixed while $\mathcal{T}_2$ would double, so the optimal learning rate would decrease by a factor of $\sqrt{2}$. This is exactly what people observe in practice <cite><a href="https://arxiv.org/abs/2408.13359">(Shen et al, 2024)</a></cite>! You can look at the paper for more examples (the optimal cooldown duration for WSD is the entire training duration, you can transition between learning rates smoother, etc.).</p>
+        <p>Under this parameterization, we can rewrite the bound as $\frac{\mathcal{T}_1}{\gamma} + \mathcal{T}_2\gamma$ for expressions $\mathcal{T}_1, \mathcal{T}_2$ that only depend on the learning rate schedule. Therefore, for a given schedule, the bound prescribes using learning rate $\gamma = \sqrt{\frac{\mathcal{T}_1}{\mathcal{T}_2}}$. Obviously, this will be off by important constants. However, it does predict the scaling behavior of optimal learning rates. For example, if I doubled the duration of training with the same schedule, $\mathcal{T}_1$ would stay fixed while $\mathcal{T}_2$ would double, so the optimal learning rate would decrease by a factor of $\sqrt{2}$. This is exactly what people observe in practice <cite><a href="https://arxiv.org/abs/2408.13359">(Shen et al, 2024)</a></cite>! The paper has more examples, such as showing the optimal cooldown duration for WSD is the entire training duration and that you can transition between learning rates smoother.</p>
 
         <h3>Conclusion</h3>
 
-        <p>This toy model is extremely simple yet predictive of how learning rate schedules shape the training trajectory. In some preliminary experiments, I found that the bound makes some accurate predictions regarding the optimal data ordering where data points differ in their expected gradient norms, but that's for another post. Thank you for reading, and feel free to reach out with any questions or thoughts!</p>
+        <p>This toy model is extremely simple yet predictive of how learning rate schedules shape the training trajectory. In some preliminary experiments, I found that the bound makes some accurate predictions regarding the optimal data ordering where data points differ in their expected gradient norms, but that's for another post. Please refer to the original papers for more details, extensions, and empirical results. Thank you for reading, and feel free to reach out with any questions or thoughts!</p>
 
         <h3>Appendix</h3>
 
@@ -196,11 +201,11 @@
             \begin{aligned}
             \mathbb{E}||x_{t+1} - u||_2^2 &= \mathbb{E}||x_t - \eta_t g_t - u||_2^2 \\
             &= \mathbb{E}[||x_t - u||_2^2 - 2\eta_t \langle g_t, x_t - u \rangle + \eta_t^2 ||g_t||_2^2] \\
-            &\leq \mathbb{E}[||x_t - u||_2^2 - 2\eta_t (f(x_t) - f(u)) + \eta_t^2 ||g_t||_2^2] && \text{[convexity]}
+            &\leq \mathbb{E}[||x_t - u||_2^2 - 2\eta_t (f(x_t, s_t) - f(u, s_t)) + \eta_t^2 ||g_t||_2^2] && \text{[convexity]}
             \end{aligned}
         </p>
 
-        <p>The last inequality uses convexity of $f$. Rearranging terms,</p>
+        <p>The last inequality uses convexity of $f$. By taking the expectation and rearranging terms, we get</p>
 
         <p class="math">
             \begin{aligned}
