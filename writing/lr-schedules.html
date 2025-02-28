@@ -164,20 +164,40 @@
         
         <h3 id="application">Application</h3>
 
-        <p>Due to empirical observation, the paper assumes that the gradient norm is constant over time ($\mathbb{E}||g_t||^2_2 = G$). With this assumption, we can derive a closed form expression for the loss of the final iterate. As discussed in the introduction, the shape of the bound closely matches empirical loss curves for WSD and cosine schedules. The paper also discusses many settings where this theorem correctly prescribes an action to take in practice. We'll work through the simplest one: tuning the learning rate for a fixed schedule.</p>
+        <p>Due to empirical observation, the paper assumes that the gradient norm is constant over time ($\mathbb{E}||g_t||^2_2 = G$), more on this later. With this assumption, we can derive a closed form expression for the loss of the final iterate. As discussed in the introduction, the shape of the bound closely matches empirical loss curves for WSD and cosine schedules. The paper also discusses many settings where this theorem correctly prescribes an action to take in practice. We'll work through the simplest one: tuning the learning rate for a fixed schedule.</p>
 
         <br>
 
-        <p>We will rewrite the learning rate $\eta_t$ as $\gamma * \mu_t$ where $\gamma$ is the maximum learning rate and $\mu_t \in [0, 1]$ is a normalized learning rate schedule. Then, the theorem becomes</p>
+        <p>We will rewrite the learning rate $\eta_t$ as $\gamma * \mu_t$ where $\gamma$ is the maximum learning rate and $\mu_t \in [0, 1]$ is a normalized learning rate schedule. Then, the theorem (with slight rearrangement) becomes</p>
         
         <p class="math">
             \begin{aligned}
-            \mathbb{E}[f(x_T) - f(x_*)] \leq & \frac{1}{2\gamma \sum_{t=1}^{T} \mu_t} \left[D^2 + \gamma^2 \sum_{t=1}^{T} \mu_t^2 G\right] \\
-            + & \frac{\gamma}{2} \sum_{k=1}^{T-1} \frac{\mu_k}{\sum_{t=k+1}^{T} \mu_t} \left(\frac{1}{\sum_{t=k}^{T} \mu_t} \sum_{t=k}^{T} \mu_t G\right)
+            \mathbb{E}[f(x_T) - f(x_*)] \leq & \frac{1}{\gamma}\left[\frac{D^2}{2 \sum_{t=1}^{T} \mu_t}\right] \\
+            + & \gamma \left[\frac{1}{2\sum_{t=1}^{T} \mu_t} \sum_{t=1}^{T} \mu_t^2 G\right. \\
+            & + \left.\frac{1}{2} \sum_{k=1}^{T-1} \frac{\mu_k}{\sum_{t=k+1}^{T} \mu_t} \left(\frac{1}{\sum_{t=k}^{T} \mu_t} \sum_{t=k}^{T} \mu_t G\right)\right]
             \end{aligned}
         </p>
         
-        <p>Under this parameterization, we can rewrite the bound as $\frac{\mathcal{T}_1}{\gamma} + \mathcal{T}_2\gamma$ for expressions $\mathcal{T}_1, \mathcal{T}_2$ that only depend on the learning rate schedule. Therefore, for a given schedule, the bound prescribes using learning rate $\gamma = \sqrt{\frac{\mathcal{T}_1}{\mathcal{T}_2}}$. Obviously, this will be off by important constants. However, it does predict the scaling behavior of optimal learning rates. For example, if I doubled the duration of training with the same schedule, $\mathcal{T}_1$ would stay fixed while $\mathcal{T}_2$ would double, so the optimal learning rate would decrease by a factor of $\sqrt{2}$. This is exactly what people observe in practice <cite><a href="https://arxiv.org/abs/2408.13359">(Shen et al, 2024)</a></cite>! The paper has more examples, such as showing the optimal cooldown duration for WSD is the entire training duration and that you can transition between learning rates smoother.</p>
+        <p>Under this parameterization, we can rewrite the bound as $\frac{\mathcal{T}_1}{\gamma} + \mathcal{T}_2\gamma$ for expressions $\mathcal{T}_1, \mathcal{T}_2$ that only depend on the learning rate schedule. Therefore, for a given schedule, the bound prescribes using learning rate $\gamma = \sqrt{\frac{\mathcal{T}_1}{\mathcal{T}_2}}$. Obviously, this will be off by important constants. However, it does predict the scaling behavior of optimal learning rates. For example, the bound (numerically) predicts that for a fixed schedule, the optimal learning rate is roughly proportional to $\frac{1}{\sqrt{T}}$ (Figure 3). This is exactly what people observe in practice <cite><a href="https://arxiv.org/abs/2408.13359">(Shen et al, 2024)</a></cite>! The paper has more examples, such as showing the optimal cooldown duration for WSD is the entire training duration and that you can transition between learning rates smoother.</p>
+
+        <figure>
+            <img src="../images/lr-schedules/optimal-lr-scaling.png" style="max-width: 80%; height: auto;">
+            <p>
+            <figcaption>Figure 3: Taken from <cite><a href="https://arxiv.org/abs/2501.18965">Schaipp et al, 2025</a></cite></figcaption>
+            </p>
+        </figure>
+
+        <h4>Gradient norm assumption</h4>
+
+        <p>The paper assumes that the gradient norm is constant over time ($\mathbb{E}||g_t||^2_2 = G$) which does not seem to be the case for training. For example, you can look at the gradient norm over the course of training for OLMo 2 7B <cite><a href="https://arxiv.org/abs/2501.00656">(OLMo et al, 2025)</a></cite> in Figure 4. The gradient norm sharply decreases during the start of training before slowly increasing for the rest of training. My understanding is that the optimal schedule for this gradient norm involves a quick warmup at the start of training, which aligns well with common practices. <cite><a href="https://arxiv.org/abs/2310.07831">Defazio et al, 2024</a></cite> has a more nuanced treatment.</p>
+
+        <figure>
+            <img src="../images/lr-schedules/olmo-gradient-norm.png" style="max-width: 80%; height: auto;">
+            <p>
+            <figcaption>Figure 4: OLMo 2 learning rate schedule and gradient norm. Corresponds to $\texttt{optim/learning_rate_group0
+            }$ and $\texttt{optim/total_grad_norm}$in OLMo 2's <a href="https://wandb.ai/ai2-llm/OLMo-2-1124-7B?nw=nwuserjjyang">training logs</a></figcaption>
+            </p>
+        </figure>
 
         <h3>Conclusion</h3>
 
@@ -195,7 +215,7 @@
             \end{aligned}
         </p>
 
-        <p>Proof: We relate the gradient norm of each step to the distance from the reference parameter $u$.</p>
+        <p>Proof: We relate the gradient norm of each step to the distance from reference parameter $u$.</p>
 
         <p class="math">
             \begin{aligned}
