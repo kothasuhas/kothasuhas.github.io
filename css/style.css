@@ -273,6 +273,17 @@ body, button {
 .blog-post {
     max-width: 800px;
     margin: 0 auto;
+    text-align: left;
+}
+
+/* Center only specific elements within blog-post */
+.blog-post > h1,
+.blog-post > p[style*="text-align: center"] {
+    text-align: center;
+}
+
+.blog-post > figure {
+    text-align: center;
 }
 
 .blog-post .math {
