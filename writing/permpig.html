@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en" id="html">
+
+<head>
+    <meta charset="utf-8">
+    <title>Suhas Kotha</title>
+    <!-- <script src="jquery-3.6.3.min.js"></script> -->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script type="text/x-mathjax-config">
+        MathJax.Hub.Config({
+          tex2jax: {
+            inlineMath: [['$', '$'], ['\\(', '\\)']],
+            displayMath: [['$$', '$$'], ['\\[', '\\]']],
+            processEscapes: true
+          }
+        });
+    </script>
+    <script type="text/javascript" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-MML-AM_CHTML"></script>
+    </script>
+    <meta name="description" content="Perturbation Invariant Gradients: Permutation Case Study">
+    <meta name="author" content="Suhas Kotha">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href='https://fonts.googleapis.com/css?family=Quicksand' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" href="../css/style.css?v=<?php echo rand(); ?>">
+    <link rel="icon" type="image/png" href="../images/dragon_logo.png">
+    <style id="autogen"></style>
+</head>
+
+<body style="max-width: 100%; margin: 0 auto;">
+    <p><a href=../index.html>Home</a></p>
+    <div class="blog-post">
+        <br>
+
+        <h1>Perturbation Invariant Gradients: Permutation Case Study</h1>
+
+        \(
+        \def\R{\mathbb{R}}
+        \def\wavg#1{\overline{f(x_{#1:T})}}
+        \)
+
+        <br>
+        <p style="text-align: center;">5/16/2025</p>
+        <br>
+
+        <!-- Outline
+         Motivation: data augmentation is helpful to leverage limited data points when you have a known invariance over your data distribution. for example, CIFAR gaussian noise, and rephrasing. however, computationally expensive (want to train on up to 1000 rephrases due to log-linear scaling, refer to blog post)
+
+         At the end of the day, all we're doing is taking multiple gradients over different draws of a distribution that we know (whether it's simple or parameterized). This feels wasteful to keep doing this multiple times.
+
+         In this post, we ask whether we can compute the expected gradient over the distribution. This problem is really difficult, we share a simple case study where we can compute the exact expected gradient: linear regression where we want permutation invariance.
+
+         Setup the problem statement
+
+         Discuss the baseline of taking gradient step on n different permutations per data point. show how it improves data efficiency, but costs kx more time.
+
+         Then, introduce expected gradient. Calculate it for linear regression and show it's a simple quantity involving sum and sum of squares (cheap to compute). Show how it dominated using a fixed number of perms while reducing the cost. 
+
+         if i can get to it, do the calculations for the gaussian perturbation case for a deep model and show where it gets hairy.
+         
+        -->
+
+        <p> When given a limited number of data points, practitioners have found great success in creating synthetic samples by augmenting data with a known invariance. For example, in image classification tasks such as CIFAR-10, there has been great success in adding data augmentations such as Gaussian noise, random cropping, and horizontal flips. In language modeling, rephrasing and more sophisticated transformations have been used to create more realistic data from a seed corpus of "real" data (<cite><a href="https://arxiv.org/abs/2401.16380">Maini et al, 2024</a></cite> ; <cite><a href="https://arxiv.org/abs/2409.07431">Yang et al, 2024</a></cite>).</p>
+
+        <br>
+
+        <p> In some cases, it is rather computationally expensive to both generate many augmentations and then train on them. For example, in <cite><a href="https://kothasuhas.github.io/writing/generator-scaling.html">Kotha et al, 2025</a></cite> we find that you can train on up to 1000 rephrases from the student model with strong log-linear returns on downstream performance. However, it feels rather wasteful to generate so many augmentations when we have access to the form of the exact augmentation distribution and student model.</p>
+
+        <br>
+
+        <p>In this post, we question whether it's possible to "collapse" this into a simpler process. Instead of taking multiple steps on multiple draw of the distribution, we try to compute the expectation of the gradient over the perturbation distribution. We hope that in some cases (1) it's computationally easier to compute the expectation and (2) it contains more information than a small number of augmentations. </p>
+
+        <br>
+            
+        <p>Since the general case is difficult (and potentially impossible), we take a simpler problem where it is feasible to take the expected gradient over the distribution: linear regression with permutation invariance. We derive the expected gradient for this case which ends up being cheaper to compute than standard augmentation. It both reduces the loss faster and has a smaller plateauing loss than standard augmentation. </p>
+
+        <!-- <figure>
+            <img src="../images/lr-schedules/predicting-wsd-theory.png" style="max-width: 80%; height: auto;">
+            <p>
+            <figcaption>Figure 2: Taken from <cite><a href="https://arxiv.org/abs/2501.18965">Schaipp et al, 2025</a></cite></figcaption>
+            </p>
+        </figure> -->
+        <figure>
+            <img src="../images/permpig/linreg_fixed_perms.png" style="max-width: 95%; height: auto;">
+            <figcaption>Figure 1: Training loss for different methods. $k$ is the number of data points synthesized per real data point. $k=1$ is standard training, $k>1$ is standard augmentation, and $k=\infty$ is the true expected gradient. </figcaption>
+        </figure>
+
+        <h3>Linear Regression with Permutation Invariance</h3>
+
+        <h4>Data</h4>
+
+        <p>We will consider standard linear regression. In this problem, a ground truth $w^* \in \R^d$ governs a data distribution $\mathcal{D}$ of data points $(x, y)$, where $x \sim \mathcal{N}(0, I_d)$ and $y = x^\top w^*$. We hope to learn the weight vector using $n$ samples from this distribution. We set $d=400$ and $n=40$ to represent a lack of data to fully recover $w^*$ in the general case. </p>
+
+        <h4>Training</h4>
+
+        <p>We will learn weight $w$ using stochastic gradient descent. Our goal is to minimize the mean squared error $\mathcal{L}$ of the predictor. We express this up to a constant factor as</p>
+
+        <p class="math">
+            \begin{aligned}
+            \mathcal{L}(w) &= \frac{1}{2} \mathbb{E}_{(x, y) \sim \mathcal{D}} \left[\ell(w; x, y)\right] \\
+            &= \frac{1}{2}\mathbb{E}_{(x, y) \sim \mathcal{D}} \left[\left(w^{\top} x - y\right)^2\right]
+            \end{aligned}
+        </p>
+            
+        <p>which is also proportional to $||w - w^*||_2^2$. To do this, we use stochastic gradient descent. At each training step, we take a single data point $(x_i, y_i)$ and take a gradient step to minimize mean squared error. The gradient is given by</p>
+
+        <p class="math">
+            \begin{aligned}
+            \nabla \ell(w; x, y) = (w^{\top} x - y)x
+            \end{aligned}
+        </p>
+
+        <p>which gets scaled by the learning rate. When we run out of data points, we will start epoching over the data. We show the results of this training process as the highest purple curve in Figure 1. Since $n$ is much smaller than $d$, it is expected that the loss will stop improving after a certain point using standard gradient descent.</p>
+
+        <h4>Invariance</h4>
+
+        <p>In general, data augmentations are used when the training process is oblivious to some invariance of the true training distribution (i.e. image class is invariant to Gaussian noise). In our linear regression setting, we will add a strong invariance to the true weight $w^*$: every entry of $w^*$ is equal to each other. Leveraging this invariance is really important for generalization: without using it, there are $d=400$ degrees of freedom, whereas under the invariance there is only one. Without loss of generality, we can assume that $w^*$ is a vector of ones.</p>
+
+        <br>
+            
+        <p>Setting all the entries equal to each other introduces a permutation invariance over the data distribution; namely, for any permutation $\pi(x)$ of true input $x$, we know that $(\pi(x_i), y_i)$ is also a valid data point. Unfortunately, standard training is oblivious to this invariance and will not be able to achieve low error.</p>
+
+        <br>
+
+        <p>We can now introduce a simple data augmentation that captures this invariance: permute the input $x_i$ with random permutation(s) $\pi$. To mirror real settings, we will assume it is not free to permute the data points and take the gradient step on the permuted data points. We now train as follows:</p>
+
+        <ul>
+            <li>For each data point, sample $k-1$ additional permutations for $k$ total points.</li>
+            <li>For each gradient step, take the gradient on the $k$ points in one batch (i.e. train with batch size $k$, grouping by ground truth points).</li>
+            <li>When data is exhausted, start epoching over the data.</li>
+        </ul>
+
+        <p>The new gradient step can be interpreted as redefining the sample loss $\ell(w; x, y)$ to be the average over the $k$ permutations. We show the results of this training process in Figure 1 for $k\in[2, 4, 8, 16]$. We note that as we increase the number of permutations, the loss decreases faster. However, under our current model of computation, it takes roughly $k$ times longer to generate synthetic data points and $k$ times more train compute to train on them. </p>
+
+        <h4>Expected Gradient</h4>
+
+        <p>It feels rather wasteful to generate permutations and take gradient steps on them. We note that as $k\to\infty$, the gradient update approaches the expected gradient over the space of permutations. We now explore the possibility of computing the <b><i>expected gradient</i></b> over the distribution of permutations. Namely, the infinite compute limit of our strategy would perform the following update:</p>
+
+        <p class="math">
+            \begin{aligned}
+            \nabla \ell(w; x, y) = \mathbb{E}_{\pi} \left[\nabla \ell(w; \pi(x), y)\right]
+            \end{aligned}
+        </p>
+
+        <p>When we write the update as this infinite sample limit, the form actually becomes much simpler. In fact, we can actually solve for the exact expected gradient as a function of $x, y$ and $w$. In Appendix A.1, we show that the $i$th entry of the expected gradient is given by</p>
+
+        <p class="math">
+            \begin{aligned}
+            \frac{s_{x^2}}{d}w + \frac{\left((s_x)^2 - s_{x^2}\right)\left(s_w - w_i\right)}{d(d-1)} - \frac{ys_x}{d} \mathbf{1}_d
+            \end{aligned}
+        </p>
+
+        <p>where $s_x = \sum_{i\in[d]} x_i$, $s_{x^2} = \sum_{i\in[d]} x_i^2$, and $s_w = \sum_{i\in[d]} w_i$. Though this is truly a disgusting expression, it is actually simple to compute as a function of $x, y, w$ and only takes a small constant factor longer than computing the standard gradient. We show the loss when taking this expected gradient step as the lowest blue curve in Figure 1. Not only is it cheaper to compute, but it learns faster matched on a step-for-step basis and has a smaller plateauing loss than small $k$. This shows that the expected gradient is a helpful operator for this specific problem.</p>
+
+        <h3>Next steps</h3>
+
+        <p>The above derivation required a lot of structure over the model and data distribution. I see two approaches to continue pushing this forward</p>
+
+        <h4>Bottom-up approach: Gaussian perturbations</h4>
+
+        <p>I think a reasonable way to make some progress is to slowly generalize this to more non-trivial models and augmentation strategies. For example, we could consider the case where we want to compute the expected gradient over Gaussian perturbations. Unfortunately, I ran into some trouble doing this even for simple multi-layer linear models. At a high-level, I took the approach of using $\mu$P-style arguments, specifically the Gradient Independence Assumption (<cite><a href="https://arxiv.org/abs/1611.01232">Schoenholz et al, 2017</a></cite> ; <cite><a href="https://arxiv.org/abs/2006.14548">Yang, 2022</a></cite>). Unfortunately, I under-appreciated how important it is that standard backpropagation is a rank 1 update to the weight vectors. For the expected gradient, you need to track both the mean and the covariance matrix of each intermediate layer. This is prohibitively memory and compute intensive for wide models, taking one from compute linear in hidden size (due to rank 1 updates decomposing into vector-vector products) to quadratic. I do not know if this is a fundamental issue or if it is resolvable by the correct assumption on the structure of the noise. I am being vague and lazy here so please reach out if I can expand on this for you.</p>
+
+        <h4>Top-down approach: Rephrasing</h4>
+
+        <p>The actual target application I am most interested in is rephrasing. In this setting, we have a known invariance over the data distribution. The main departure from the traditional augmentation setting is that it is parameterized by model parameters. In fact, as we discuss in a <a href=https://kothasuhas.github.io/writing/generator-scaling.html">previous blog post</a>, this set of parameters can be the same as the student model. In this setting, it feels extra wasteful to do the generation and training seperately. I wonder if there is a way to collapse this process into a simpler step considering that we have the exact parameterization of the distribution of interest. Also reach out if you have thoughts on this. </p>
+
+        <h3>Conclusion</h3>
+
+        <p>Data augmentation is a powerful tool for leveraging invariances in data unknown to the training process. Hopefully, we can make it more scalable by leveraging structure in the augmentation distribution, like we can for permutation invariance. Thank you for reading, and feel free to reach out with any questions or thoughts!</p>
+
+        <h3>Appendix</h3>
+
+        <h4 id="expected-gradient">A.1: Computing the expected permutation gradient</h4>
+
+        <p>As a quick refresher, the standard gradient for our loss is given by</p>
+
+        <p class="math">
+            \begin{aligned}
+            \nabla \ell(w; x, y) = (w^{\top} x - y)x
+            \end{aligned}
+        </p>
+
+        <p>Now, we can try solving for the expected gradient over the distribution of permutations.</p>
+
+        <p class="math">
+            \begin{aligned}
+            &\mathbb{E}_{\pi} \left[\nabla \ell(w; \pi(x), y)\right] \\
+            =\;& \mathbb{E}_{\pi} \left[(w^{\top} \pi(x) - y)\pi(x)\right] \\
+            =\;& \mathbb{E}_{\pi} \left[(w^{\top} \pi(x))\pi(x)\right] - y\mathbb{E}_{\pi} \left[\pi(x)\right] \\
+            \end{aligned}
+        </p>
+        
+        <p>For convenience, we will define the following terms</p>
+
+        <ul>
+            <li>The sum of entries of $x$ as $s_x = \sum_{i\in[d]} x_i$</li>
+            <li>The sum of the squares of the entries of $x$ as $s_{x^2} = \sum_{i\in[d]} x_i^2$</li>
+            <li>The sum of the entries of $w$ as $s_w = \sum_{i\in[d]} w_i$</li>
+        </ul>
+
+        <p>For the second term, since the expectation of the mean permutation is simply the vector of the average $x$ entry, it is given by</p>
+
+        <p class="math">
+            \begin{aligned}
+            y\mathbb{E}_{\pi} \left[\pi(x)\right] = \frac{ys_x}{d} \mathbf{1}_d
+            \end{aligned}
+        </p>
+        
+        <p>The first term is slightly more involved. We can first rewrite the $i$th entry of the gradient as</p>
+
+        <p class="math">
+            \begin{aligned}
+            &\left(\mathbb{E}_{\pi} \left[(w^{\top} \pi(x))\pi(x)\right]\right)_i \\
+            =\;& \mathbb{E}_{\pi} \left[\left(\sum_{j\in[d]}w_jx_{\pi(j)}\right)x_{\pi(i)}\right] \\
+            =\;& \sum_{j\in[d]} w_j \mathbb{E}_{\pi} \left[x_{\pi(j)}x_{\pi(i)}\right] \\
+            \end{aligned}
+        </p>
+
+        <p>Since this is a permutation, we can not assume $\pi(i)$ and $\pi(j)$ are independent and split the expectation. Instead, we can condition on when they are equal.</p>
+
+        <ul>
+            <li>When $\pi(i) = \pi(j)$, the inner expectation simplifies as $\frac{1}{d}\sum_{p\in[d]} x_p^2 = \frac{s_{x^2}}{d}$</li>
+            <li>When $\pi(i) \neq \pi(j)$, the inner expectation simplifies as $\frac{\sum_{p\neq q} x_px_q}{d(d-1)} = \frac{(s_x)^2 - s_{x^2}}{d(d-1)}$</li>
+        </ul>
+
+        <p>With this in hand, we can write the full summation as</p>
+
+        <p class="math">
+            \begin{aligned}
+            & \sum_{j\in[d]} w_j \mathbb{E}_{\pi} \left[x_{\pi(j)}x_{\pi(i)}\right] \\
+            =\;& w_i \frac{s_{x^2}}{d} + \sum_{j\neq i} w_j \frac{(s_x)^2 - s_{x^2}}{d(d-1)} \\
+            =\;& w_i \frac{s_{x^2}}{d} + \frac{\left((s_x)^2 - s_{x^2}\right)\left(s_w - w_i\right)}{d(d-1)} \\
+            \end{aligned}
+        </p>
+
+        <p>Putting it all together, we get that the $i$th entry of the full expected gradient $\mathbb{E}_{\pi} \left[\nabla \ell(w; \pi(x), y)_i\right]$ is given by</p>
+
+        <p class="math">
+            \begin{aligned}
+            \boxed{\frac{s_{x^2}}{d}w + \frac{\left((s_x)^2 - s_{x^2}\right)\left(s_w - w_i\right)}{d(d-1)} - \frac{ys_x}{d} \mathbf{1}_d}
+            \end{aligned}
+        </p>
+        
+
+        <p>Though this is truly a disgusting expression, the main point is that it's a simple function of the entries of $x, y$ and $w$ and doesn't depend on the permutation $\pi$. We could probably simplify it drastically if we assumed that $\pi(x)$ was a random sample with replacement, which is a simple approximation. </p>
+
+        <script type="text/javascript" src="../js/post.js"></script>
+    </div>
+</body>
+
+</html>
+
+
+<!-- publish link: http://www.andrew.cmu.edu/server/publish.html -->
