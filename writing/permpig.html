@@ -67,11 +67,11 @@
 
         <br>
 
-        <p>In this post, we question whether it's possible to "collapse" this into a simpler process. Instead of taking multiple steps on multiple draw of the distribution, we try to compute the expectation of the gradient over the perturbation distribution. We hope that in some cases (1) it's computationally easier to compute the expectation and (2) it contains more information than a small number of augmentations. </p>
+        <p>In this post, we question whether it's possible to "collapse" this into a simpler process. Instead of taking multiple steps on multiple draws of the distribution, we try to compute the expectation of the gradient over the perturbation distribution. We hope that in some cases (1) it's computationally easier to compute the expectation and (2) it contains more information than a small number of augmentations. </p>
 
         <br>
             
-        <p>Since the general case is difficult (and potentially impossible), we take a simpler problem where it is feasible to take the expected gradient over the distribution: linear regression with permutation invariance. We derive the expected gradient for this case which ends up being cheaper to compute than standard augmentation. It both reduces the loss faster and has a smaller plateauing loss than standard augmentation. </p>
+        <p>Since the general case is difficult (and potentially impossible), we focus on a simpler problem where it is feasible to computed the expected gradient: linear regression with permutation invariance. The expected gradient for this case ends up being cheaper to compute than standard augmentation. It both reduces the loss faster and has a better loss asymptotically compared to sampling augmentations. </p>
 
         <!-- <figure>
             <img src="../images/lr-schedules/predicting-wsd-theory.png" style="max-width: 80%; height: auto;">
@@ -88,7 +88,7 @@
 
         <h4>Data</h4>
 
-        <p>We will consider standard linear regression. In this problem, a ground truth $w^* \in \R^d$ governs a data distribution $\mathcal{D}$ of data points $(x, y)$, where $x \sim \mathcal{N}(0, I_d)$ and $y = x^\top w^*$. We hope to learn the weight vector using $n$ samples from this distribution. We set $d=400$ and $n=40$ to represent a lack of data to fully recover $w^*$ in the general case. </p>
+        <p>We will consider standard linear regression. In this problem, a ground truth $w^* \in \R^d$ governs a data distribution $\mathcal{D}$ of data points $(x, y)$, where $x \sim \mathcal{N}(0, I_d)$ and $y = w^{*\top} x$. We hope to learn the weight vector using $n$ samples from this distribution. We set $d=400$ and $n=40$ to represent a lack of data to fully recover $w^*$ in the general case. </p>
 
         <h4>Training</h4>
 
@@ -101,7 +101,7 @@
             \end{aligned}
         </p>
             
-        <p>which is also proportional to $||w - w^*||_2^2$. To do this, we use stochastic gradient descent. At each training step, we take a single data point $(x_i, y_i)$ and take a gradient step to minimize mean squared error. The gradient is given by</p>
+        <p>which is also proportional to $||w - w^*||_2^2$. We minimize this loss using stochastic gradient descent. At each training step, we take a single data point $(x_i, y_i)$ and take a gradient step to minimize mean squared error. The gradient is given by</p>
 
         <p class="math">
             \begin{aligned}
@@ -117,31 +117,31 @@
 
         <br>
             
-        <p>Setting all the entries equal to each other introduces a permutation invariance over the data distribution; namely, for any permutation $\pi(x)$ of true input $x$, we know that $(\pi(x_i), y_i)$ is also a valid data point. Unfortunately, standard training is oblivious to this invariance and will not be able to achieve low error.</p>
+        <p>Setting all the entries equal to each other introduces a permutation invariance over the data distribution; namely, for any permutation $\pi(x)$ of true input $x$, we know that $(\pi(x), y)$ is also a valid data point. Unfortunately, standard training is oblivious to this invariance and will not be able to achieve low error.</p>
 
         <br>
 
-        <p>We can now introduce a simple data augmentation that captures this invariance: permute the input $x_i$ with random permutation(s) $\pi$. To mirror real settings, we will assume it is not free to permute the data points and take the gradient step on the permuted data points. We now train as follows:</p>
+        <p>We now introduce a simple data augmentation that captures this invariance: permute the input $x$ with random permutation(s) $\pi$. To mirror real settings, we will assume it is not free to both permute the data points or take the gradient step on the permuted data points. We now train as follows:</p>
 
         <ul>
             <li>For each data point, sample $k-1$ additional permutations for $k$ total points.</li>
-            <li>For each gradient step, take the gradient on the $k$ points in one batch (i.e. train with batch size $k$, grouping by ground truth points).</li>
+            <li>For each gradient step, take the gradient on the $k$ points in one batch (i.e. train with batch size $k$ on augmentations).</li>
             <li>When data is exhausted, start epoching over the data.</li>
         </ul>
 
-        <p>The new gradient step can be interpreted as redefining the sample loss $\ell(w; x, y)$ to be the average over the $k$ permutations. We show the results of this training process in Figure 1 for $k\in[2, 4, 8, 16]$. We note that as we increase the number of permutations, the loss decreases faster. However, under our current model of computation, it takes roughly $k$ times longer to generate synthetic data points and $k$ times more train compute to train on them. </p>
+        <p>The new gradient step can be interpreted as redefining the gradient of the loss $\nabla \ell(w; x, y)$ to be the average over the $k$ permutations. We show the results of this training process in Figure 1 for $k\in\{2, 4, 8, 16\}$. We note that as we increase the number of permutations, the loss decreases faster. However, under our current model of computation, this strategy costs $k$ times more compute for both synthetic data generation and training. </p>
 
         <h4>Expected Gradient</h4>
 
-        <p>It feels rather wasteful to generate permutations and take gradient steps on them. We note that as $k\to\infty$, the gradient update approaches the expected gradient over the space of permutations. We now explore the possibility of computing the <b><i>expected gradient</i></b> over the distribution of permutations. Namely, the infinite compute limit of our strategy would perform the following update:</p>
+        <p>It feels rather wasteful to generate i.i.d. permutations and take gradient steps on them. We note that as $k\to\infty$, the gradient update approaches the expected gradient over the permutation distribution. We now explore the possibility of computing the <b><i>expected gradient</i></b> over the distribution of permutations. Namely, the infinite compute limit of our strategy would perform the following update:</p>
 
         <p class="math">
             \begin{aligned}
-            \nabla \ell(w; x, y) = \mathbb{E}_{\pi} \left[\nabla \ell(w; \pi(x), y)\right]
+            \nabla \ell(w; x, y) := \mathbb{E}_{\pi} \left[\nabla \ell(w; \pi(x), y)\right]
             \end{aligned}
         </p>
 
-        <p>When we write the update as this infinite sample limit, the form actually becomes much simpler. In fact, we can actually solve for the exact expected gradient as a function of $x, y$ and $w$. In Appendix A.1, we show that the $i$th entry of the expected gradient is given by</p>
+        <p>When we write the update as this infinite sample limit, the problem becomes more tractable. In fact, we can solve for the exact expected gradient as a function of $x, y$ and $w$. In Appendix A.1, we show that the $i$th entry of the expected gradient is given by</p>
 
         <p class="math">
             \begin{aligned}
@@ -149,7 +149,7 @@
             \end{aligned}
         </p>
 
-        <p>where $s_x = \sum_{i\in[d]} x_i$, $s_{x^2} = \sum_{i\in[d]} x_i^2$, and $s_w = \sum_{i\in[d]} w_i$. Though this is truly a disgusting expression, it is actually simple to compute as a function of $x, y, w$ and only takes a small constant factor longer than computing the standard gradient. We show the loss when taking this expected gradient step as the lowest blue curve in Figure 1. Not only is it cheaper to compute, but it learns faster matched on a step-for-step basis and has a smaller plateauing loss than small $k$. This shows that the expected gradient is a helpful operator for this specific problem.</p>
+        <p>where $s_x = \sum_{i\in[d]} x_i$, $s_{x^2} = \sum_{i\in[d]} x_i^2$, and $s_w = \sum_{i\in[d]} w_i$. Though this is kind of disgusting, it is actually simple to find this quantity as a function of $x, y, w$ and only takes a small constant factor longer than computing the standard gradient. We show the loss when taking this expected gradient step as the lowest blue curve in Figure 1. Not only is it cheaper to compute, but it learns faster matched on a step-for-step basis and has a smaller plateauing loss than small $k$. This shows that the expected gradient is a helpful operator for this specific problem.</p>
 
         <h3>Next steps</h3>
 
