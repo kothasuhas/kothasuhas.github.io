@@ -21,7 +21,7 @@
     </script>
     <script type="text/javascript" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS_CHTML"></script>
     </script>
-    <meta name="description" content="Introduction to Off-Policy RL">
+    <meta name="description" content="Probabilistic Inference in Language Models via Twisted Sequential Monte Carlo">
     <meta name="author" content="Suhas Kotha">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link href='https://fonts.googleapis.com/css?family=Quicksand' rel='stylesheet' type='text/css'>
@@ -36,7 +36,6 @@
         <br>
 
         <h1>Probabilistic Inference in Language Models via Twisted Sequential Monte Carlo</h1>
-        <h1>!work in progress!</h1>
 
         \(
         \def\R{\mathbb{R}}
@@ -63,7 +62,7 @@
         <!-- \newcommand{\clip}[3]{\texttt{clip}(#1, #2, #3)} -->
 
         <br>
-        <p style="text-align: center;">6/11/2025</p>
+        <p style="text-align: center;">7/25/2025</p>
         <br>
 
         <!-- Outline
@@ -97,17 +96,17 @@
 
         -->
 
-        <!-- <p>Thanks to many discussions with <a href="https://www.konwoo.kim/">Konwoo</a>.</p> -->
+        <!-- <p></p> -->
 
-        <p>This paper describes cool connections between the probabilistic inference perspective and reinforcement learning perspective to sampling from a potential/reward function. This post is mostly notes on the detailed exposition of the paper. We closely follow the SMC exposition and restructure the connection to RL.</p>
+        <p>Probabilistic Inference in Language Models via Twisted Sequential Monte Carlo <cite><a href="https://arxiv.org/abs/2404.17546">(Zhao et al, 2024)</a></cite> describes cool connections between the probabilistic inference approach and reinforcement learning approach to sampling from a potential/reward function. This post is mostly notes to simplify the detailed exposition of the paper. We closely follow the SMC exposition and restructure the connection to RL. Thanks to many discussions with Konwoo and my reading group friends Arthur, Peter, and Gabe.</p>
 
         <h3>Problem statement</h3>
 
-        <p>You are interested in decoding $T$ tokens $\sT$ from a base language model denoted $\base$. You have a potential function denoted $\potential(\sT)$ that can tell you how desirable a response is. Examples: is this math solution right, is this output toxic, etc. Note that this potential can only be evaluated on full sequences.</p>
+        <p>You are interested in decoding $T$ tokens $\sT$ from a base language model denoted $\base$. You have a potential function denoted $\potential(\sT)$ that can tell you how desirable a response is. For example, is $\sT$ a valid math proof, is $\sT$ not toxic, etc. This potential can only be evaluated on full sequences.</p>
 
         <br>
 
-        <p>You are interested in sampling from a base policy reweighted by the potential function. Specifically, you want to sample from target density $\target(\sT)$ defined as</p>
+        <p>You are given an auto-regressive base model $\base$ and you are interested in sampling from this distribution reweighted by the potential function. Specifically, you want to sample from target density $\target(\sT)$ defined as</p>
 
         <p class="math">
             \begin{aligned}
@@ -121,15 +120,15 @@
 
         <h3>Summary of approaches</h3>
 
-        <p>There are multiple approaches to sample from this distribution. One approach is to perform reinforcement learning to directly learn the correct policy: specifically, if you perform RL with KL regularization $\beta$ and reward function $r(\sT) = \exp\p{\frac{\phi(\sT)}{\beta}}$, the loss minimizer (i.e. constrained reward maximizer) corresponds exactly to $\target(\sT)$ (detail later).</p>
+        <p>How can we sample from the target distribution? One approach is to perform reinforcement learning to directly learn the correct policy: specifically, if you perform RL with KL regularization $\beta$ and reward function $r(\sT) = \exp\p{\frac{\phi(\sT)}{\beta}}$, the loss minimizer (i.e. constrained reward maximizer) corresponds exactly to $\target(\sT)$ (which we'll prove <a href="#standard-RL">later</a>).</p>
 
         <br>
 
-        <p>A second approach comes from sampling and probabilistic inference. Instead of changing the base policy, one can sample responses and reweight them by the potential function. Though this would work with infinite samples, this is plagued with variance for finite samples due to an inadequate base policy. This paper uses Sequential Monte Carlo, which reduces the variance by constructing a sequence of intermediate distributions that terminates in the target distribution. This paper proposes a new twist learning algorithm .</p>
+        <p>A second approach comes from sampling and probabilistic inference. Instead of changing the base policy, one can sample responses and reweight them by the potential function. Though this would eventually produce samples from the true distribution with infinite samples, it is plagued with variance for finite samples since the base policy is imperfect. This paper uses Sequential Monte Carlo, which reduces the variance by constructing a sequence of intermediate distributions that terminates in the target distribution alongside a clever proposal distribution. The paper aims to learn twist functions that best approximate both the desired intermediate distributions and the optimal proposal distribution</p>
 
         <br>
 
-        <p>We will first cover the SMC-style twist function approaches, then the RL proposal learning approaches, then discuss how they compare (type, function, negative/positive usage). TODO conditional case  </p>
+        <p>We will first cover the SMC-style twist function approaches, discuss its correspondence with RL, and show how to compare approaches by their ability to estimate the partition function. We will omit the conditioning application as it felt less central to my interests. </p>
 
         <h3>Motivating/using SMC and Twists</h3>
 
@@ -139,27 +138,23 @@
 
         <br>
 
-        <p>In the infinite sample limit $K \to \infty$, this produces true samples from the target $\target$. Unfortunately, for finite samples, its success is defined by the quality of the proposal distribution $q$ and how close it is to the target $\target$. Specifically, if the proposal was equal to the target $q(\sT) = \sigma(\sT)$, then every importance weight would be $\partition_\sigma$ and the variance of the importance weights would be $0$, corresponding to good finite sample SNIS.</p>
+        <p>In the infinite sample limit $K \to \infty$, this produces true samples from the target $\target$. Unfortunately, for finite samples, its success is defined by how close the proposal $q$ is to the target $\target$. For example, if the proposal was equal to the target $q(\sT) = \sigma(\sT)$, then every importance weight would be $\partition_\sigma$ and the variance of the importance weights would be $0$, corresponding to good finite sample SNIS.</p>
 
         <h4>Sequential Monte Carlo (SMC)</h4>
 
-        <p> We observe that for the earlier procedure, though our procedure is a reasonable approximation regardless of the proposal, better proposals correspond to better samplers. The focus of SMC is to construct a proposal distribution that's closer to the target distribution. This is done by constructing a sequence of intermediate target distributions $\br{\unnorm{\itarget}_t(\st)}_{t\in[T]}$, where each intermediate distribution is defined over prefixes of $t$ tokens. SMC starts with $K$ empty sequences and partially updates them in steps $1, \ldots, t, \ldots, T-1$ in the following manner </p>
+        <p> We want a lower variance proposal distribution so that we get a better sampler. The focus of SMC is to construct a proposal distribution that's closer to the target distribution. This is done by constructing a sequence of intermediate target distributions $\br{\itarget_t(\st)}_{t\in[T]}$. For example, diffusion can be viewed as SMC by setting the intermediate targets to be Gaussian corruptions of the target data distribution. For our discussion, each intermediate distribution will be over length $t$ prefixes. SMC starts with $K$ empty sequences and partially updates them in steps $1, \ldots, t, \ldots, T-1$ in the following manner </p>
 
         <ol>
             <li>Propose: sample one new token from the proposal $q(s^k_t | s^k_{1:t-1})$ for each sequence $k$</li>
-            <li>Weight: assign a weight to each sample $s^k_{1:t}$ as if it was from $\unnorm{\itarget}_t$ via weighting function $w_t(\st) := \frac{\unnorm{\itarget}_t(\st)}{\unnorm{\itarget}_{t-1}(s_{1:t-1})q(s_t | s_{1:t-1})}$</li>
-            <li>Resample: use self-normalized importance sampling as earlier so that the $K$ sequences are effectively drawn from $\itarget_t(\st)$.</li>
+            <li>Weight: assuming we have access to the likelihoods of the intermediate distributions $\itarget_t$, assign a weight to each sample $s^k_{1:t}$ as if it was from ${\itarget}_t$ via weighting function $w_t(\st) := \frac{\unnorm{\itarget}_t(\st)}{\unnorm{\itarget}_{t-1}(s_{1:t-1})q(s_t | s_{1:t-1})}$</li>
+            <li>Resample: use self-normalized importance sampling to samples from $K$ sequences with weights $\frac{w(\st^i)}{\sum_{j\in[k]}w(\st^j)}$. These samples are now effectively drawn from $\itarget_t(\st)$.</li>
         </ol>
 
-        <p>To ensure that our final samples are from our target distribution of interest in this formulation, we simply set $\pi_T = \sigma_T$. We are allowed to set the other intermediate distributions to anything of our choosing. For example, diffusion can be viewed as SMC by setting the intermediate targets to be Gaussian corruptions of the target data distribution.</p>
+        <p>To ensure that our final samples are from our target distribution of interest in this formulation, we simply set $\pi_T = \sigma_T$. Now, it doesn't matter whether are sampling the intermediate distributions since this final resampling step corrects for any proposal, similar to naive importance sampling.</p>
 
         <h4>Twisted Sequential Monte Carlo</h4>
 
-        <p>The key design decision of twisted SMC methods is to define the intermediate target distributions as the true marginals. In other words, the desired targets $\pi_t(\st)$ are equivalent to $\target(\st)$ for all $t$.</p>
-
-        <br>
-
-        <p>To achieve this, we will construct twist functions $\twist_t(\st)$ that signify the difference between our base policy and the desired intermediate distributions. Namely,</p>
+        <p>The key design decision of twisted SMC methods is to define the intermediate target distributions as the true marginals. In other words, the desired targets $\pi_t(\st)$ are equivalent to $\target(\st)$ for all $t$. To achieve this, we will construct twist functions $\twist_t(\st)$ that signify the difference between our base policy and the desired intermediate distributions. Namely,</p>
 
         <p class="math">
             \begin{aligned}
@@ -174,32 +169,34 @@
         <p>Now, we can simply plug in these definitions for the intermediate distributions and (ignoring constants) derive the importance sampling weights of</p>
 
         <p class="math">
-            \begin{aligned}
+            \begin{equation}\label{smc-weight}
+            \begin{split}
             w_t(\st) &= \frac{\unnorm{\itarget}_t(\st)}{\unnorm{\itarget}_{t-1}(s_{1:t-1})q(s_t | s_{1:t-1})} \\
             &\propto \frac{\base(\st)\twist_{t}(s_{1:t})}{q(s_t | s_{1:t-1})\base(s_{1:t-1})\twist_{t-1}(s_{1:t-1})} \\
-            &= \frac{\base(s_t | s_{1:t-1})\twist_{t}(s_{1:t})}{q(s_t | s_{1:t-1})\twist_{t-1}(s_{1:t-1})} \\
-            \end{aligned}
+            &= \frac{\base(s_t | s_{1:t-1})\twist_{t}(s_{1:t})}{q(s_t | s_{1:t-1})\twist_{t-1}(s_{1:t-1})} \label{eq:smc-weight} \\
+            \end{split}
+            \end{equation}
         </p>
 
-        <p>Note that we if we have horrendous twist functions for steps $[T-1]$, we might not actually be sampling from our intermdiate target distribution of interest $\itarget$. However, this is totally fine since our final twist function $\twist_T$ is always correct and will derive unbiased estimates of the correct importance weights. This is akin to sampling from some random proposal distribution defined by any choice of $\base, q$ and $\br{\twist_{t}}_{t\in[T-1]}$ which always get perfectly corrected by vanilla SNIS. </p>
+        <p>Note that we if we have horrendous twist functions for steps $[T-1]$, we might not actually be sampling from our intermdiate target distribution of interest $\itarget$. However, this is totally fine since the final twist function $\twist_T$ is always correct and will derive unbiased estimates of the correct importance weights. </p>
 
         <h4>Optimal twists</h4>
 
         <p>The correct twists correspond to sampling from the true marginal and would result in $\itarget_t(\st) = \target(\st)$. This is equivalent to reweighing each prefix by its future return according to the base policy, or</p>
 
         <p class="math">
-            $$\twist_t^*(\st) \propto \sum_{s_{t+1:T}} \base(s_{t+1:T}|\st)\potential(\sT)$$
+            \begin{equation}\label{eq:twist-marginal}\twist_t^*(\st) \propto \sum_{s_{t+1:T}} \base(s_{t+1:T}|\st)\potential(\sT)\end{equation}
         </p>
 
-        <p>This can be further decomposed into a step-wise consistency condition which RL people might find similar to the Bellman equation</p>
+        <p>This can be further decomposed into a step-wise consistency condition which RL people might find similar to the Bellman equation (more <a href="#value">later</a>)</p>
 
         <p class="math">
-            $$\twist_t^*(\st) \propto \sum_{s_{t+1}} \base(s_{t+1} | \st)\twist_t^*(s_{1:t+1})$$
+            \begin{equation}\label{eq:twist-bellman}\twist_t^*(\st) \propto \sum_{s_{t+1}} \base(s_{t+1} | \st)\twist_t^*(s_{1:t+1})\end{equation}
         </p>
 
         <h4>Choice of proposal distribution</h4>
 
-        <p>We can choose the proposal distribution $q$. The most straightforward choice is using the base policy $q = \base$. However, this isn't the best proposal. The best one, as discussed earlier, minimizes the variance of the importance sampling weights, which are a function of the intermediate distributions defined by our twist functions. The variance minimizing choice $q_t^\pi$ would result in constant weights $w_t$, given by</p>
+        <p>We can utilize any proposal distribution $q$. The most straightforward choice is using the base policy $q = \base$. However, this isn't going to be the lowest variance proposal. Since the variance minimizing proposal choice $q_t^\pi$ would result in the weights $w_t$ shown in (1) to be constant, it is given by</p>
 
         <br>
 
@@ -207,18 +204,16 @@
             \begin{aligned}
             q_t^\pi(s_t | s_{1:t-1}) &\propto \frac{\itarget_t(\st)}{\itarget_{t-1}(s_{1:t-1})} \\
             &= \frac{\frac{1}{\partition^\twist_t}\base(\st)\twist_t(\st)}{\frac{1}{\partition_{t-1}^\twist} \base(s_{1:t-1})\twist_{t-1}(s_{1:t-1})} \\
-            &\propto \base(s_t | s_{1:t-1})\twist_t(\st) && \text{[ignore constants wrt $s_t$]}\\
+            &\propto \base(s_t | s_{1:t-1})\twist_t(\st) && \text{[$\twist_{t-1}(s_{t-1})$ is constant wrt $s_t$]}\\
             &= \frac{1}{\partition^\pi_t(s_{1:t-1})}\base(s_t | s_{1:t-1})\twist_t(\st)\\
             \end{aligned} 
         </p>
 
-        <p>for a new normalizing constant $\partition^\pi_t(s_{1:t-1}) = \sum_{s_t} \base(s_t | s_{1:t-1})\twist_t(\st)$. When the twist function $\twist_t$ is parameterized as an auto-regressive transformer, we can actually get all its values at the same time. For $\potential(\sT)$ which might not admit this simplification, we first use an approximation $\twist_T$ and then perform an additional step of importance sampling with weight $\frac{\potential(\sT)}{\twist_T(\sT)}$</p>
-
-        <h4>CONDITIONALS</h4>
+        <p>for a new normalizing constant $\partition^\pi_t(s_{1:t-1}) = \sum_{s_t} \base(s_t | s_{1:t-1})\twist_t(\st)$. When the twist function $\twist_t$ is parameterized as an auto-regressive transformer that outputs a number per next token choice, we can compute $\partition^\pi_t(s_{1:t-1})$ as the inner product of two vectors from two forward passes. Since the $\potential(\sT)$ likely does not share this property of being able to output a vector conditioned on $T-1$ tokens, we first learn an approximation $\twist_T$ that outputs a vector. We resample according to this and then further importance sample using $\frac{\potential(\sT)}{\twist_T(\sT)}$. I found it kind of funny that the twist function was being used both for the SMC resampling and for the proposal sampling.</p>
 
         <h3>Learning twists</h3>
 
-        <p>So far, we have shown how to use given twist functions: for each intermediate target distribution, select a high-quality proposal and resample according to the twist functions, until reweighting by the true reward in the final step. Now, we are interested in learning the desired twist functions to use for the proposal + resampling steps.</p>
+        <p>So far, we have shown how to use given twist functions: for each intermediate target distribution, utilize your (twisted) proposal and resample according to the twist functions before reweighting by the true potential for an unbiased estimate. Now, we are interested in learning the desired twist functions to use for the proposal + resampling steps.</p>
 
         <br>
 
@@ -241,38 +236,34 @@
             &= \sum_{t\in[T]} \Eof{\st \sim \target(\st)}{\nabla_\theta \log \itarget_t^{\theta}(\st)} \\
             &= \sum_{t\in[T]} \Eof{\st \sim \target(\st)}{\nabla_\theta \p{\log \base(\st) + \log \twist^\theta_t(\st) - \log \sum_{\st'} \base(\st')\twist^{\theta}_t(\st')}} \\
             &= \sum_{t\in[T]} \Eof{\st \sim \target(\st)}{\nabla_\theta \log \twist^\theta_t(\st)} - \nabla_\theta \log \sum_{\st'} \base(\st')\twist^{\theta}_t(\st') \\
-            &= \sum_{t\in[T]} \Eof{\st \sim \target(\st)}{\nabla_\theta \log \twist^\theta_t(\st)} - \frac{\nabla_\theta \sum_{\st} \base(\st)\twist^{\theta}_t(\st)}{\sum_{\st'} \base(\st')\twist^{\theta}_t(\st')} \\
-            &= \sum_{t\in[T]} \Eof{\st \sim \target(\st)}{\nabla_\theta \log \twist^\theta_t(\st)} - \frac{\sum_{\st} \base(\st)\twist^{\theta}_t(\st)\nabla_\theta\log \twist^{\theta}_t(\st)}{\sum_{\st'} \base(\st')\twist^{\theta}_t(\st')} \\
+            &= \sum_{t\in[T]} \Eof{\st \sim \target(\st)}{\nabla_\theta \log \twist^\theta_t(\st)} - \frac{\nabla_\theta \sum_{\st} \base(\st)\twist^{\theta}_t(\st)}{\sum_{\st'} \base(\st')\twist^{\theta}_t(\st')} && \text{[$\nabla_\theta \log f(x) = \nabla f(x)/f(x)$]} \\
+            &= \sum_{t\in[T]} \Eof{\st \sim \target(\st)}{\nabla_\theta \log \twist^\theta_t(\st)} - \frac{\sum_{\st} \base(\st)\twist^{\theta}_t(\st)\nabla_\theta\log \twist^{\theta}_t(\st)}{\sum_{\st'} \base(\st')\twist^{\theta}_t(\st')}  && \text{[$\nabla_\theta f(x) = f(x)\nabla\theta \log f(x)$]}\\
             &= \sum_{t\in[T]} \Eof{\st \sim \target(\st)}{\nabla_\theta \log \twist^\theta_t(\st)} - \sum_{\st}\frac{\base(\st)\twist^{\theta}_t(\st)}{\sum_{\st'} \base(\st')\twist^{\theta}_t(\st')}\nabla_\theta\log \twist^{\theta}_t(\st) \\
             &= \boxed{\sum_{t\in[T]} \Eof{\st \sim \target(\st)}{\nabla_\theta \log \twist^\theta_t(\st)} - \Eof{\st \sim \itarget_t^\theta(\st)}{\nabla_\theta \log \twist^{\theta}_t(\st)}} \\
             \end{aligned}
         </p>
 
-        <p>We note that this gradient contrasts samples taken from the true marginal $\target(\st)$ and the parameterized intermediate target $\itarget_t^\theta$, encouraging samples to look more like the true marginal instead of the parameterized targets. Therefore, it requires a source of positive samples for the right term and negative samples for the left term. Since we can not do this exactly, we will estimate these expectations.</p>
+        <p>Now that we've derived the gradient, we notice it has a nice interpretation. Specifically, it contrasts samples taken from the true marginal $\target(\st)$ and the parameterized intermediate target $\itarget_t^\theta$, encouraging samples to look more like the true marginal instead of the parameterized targets. Therefore, it requires a source of positive samples for the right term and negative samples for the left term. Since we can not do this exactly, we will estimate these expectations.</p>
 
         <ul>
-            <li>Negative samples: We can estimate the sampling distribution for the negatives by simply running any sampling algorithm. Namely, we can do naive importance sampling or SMC with a naive proposal or twisted proposal.</li>
+            <li>Negative samples: We can estimate the sampling distribution for the negatives by sampling from $\itarget_t$ as we described earlier. We are allowed to choose which proposal we want since both will result in samples from $\itarget_t$.</li>
             <br>
-            <li>Positive samples: If we had access to ground truth samples, we can plug them in here. If we don't have access to these, then we can use our sampling algorithms to find them. Specifically, to generate positive samples $\st$, we can use the full twisted SMC algorithm to generate approximate samples $sT$, and then concatenate them per token length. At first glance, this might appear to be the same as the negative samples. However, these prefixes are reweighted based on the full sequences, whereas the negative samples only using twists up to $t$.</li>
+            <li>Positive samples: If we had access to ground truth samples, we can plug them in here. If we don't have access to these, then we can use our sampling algorithms to approximate them. Specifically, to generate positive samples $\st$, we can use the full twisted SMC algorithm to generate approximate samples $sT$ and trunctate them to length $t$. At first glance, this might appear to be the same as the negative samples. However, these prefixes are reweighted based on the potential of the full sequences, whereas the negative samples only use the likely inaccurate twists up to $t$.</li>
         </ul>
 
-        <p>What are the other ways to learn twist functions?</p>
+        <p>Nice! Are there other ways to learn twist functions? (the below descriptions are not incredibly detailed)</p>
 
-        <h4>Noise Contrastive Estimation</h4>
-
-        <p>TODO The traditional way of learning the twist function is NCE and comes from energy based modeling. NCE tries to discriminate between positive samples drawn from $\target(\st)$ and negative samples drawn from base model $\base(\st)$. It does this by setting up a binary classification task where the minimizer corresponds to the density ratio TODO.</p>
-
-        <h4>FUDGE</h4>
-
-        <p>Downside: proposal distribution must be base policy.</p>
-
-        <h4>RL</h4>
+        <ul>
+            <li>Noise Contrastive Estimation: Twist functions can also be seen as energy models, where the goal is to learn $E(\st) := \log \sigma(\st) - \log \base(\st)$. In the EBM literature, this is trained via noise contrastive estimation by performing binary classification between real samples and base samples. This similarly requires sampling under both the true marginal distribution and the twisted approximation of the distribution, leveraging similar machinery to the CTL loss.</li>
+            <li>Soft RL: We can use value-based RL to guide our training of twist functions. We discuss the basic idea of this approach <a href="#value">later</a>. Briefly, this method often enforces the consistency loss described in Equation \eqref{eq:twist-bellman}</li>
+            <li>FUDGE: Briefly, we can enforce the full consistency loss as described in Equation \eqref{eq:twist-marginal}.</li>
+        </ul>
 
         <h3>Connection to RL: Directly learning policies</h3>
 
         <p>In RL, the goal is to directly learn a policy with the desired properties instead of learning twist functions. Standard RL is policy learning with reverse KL, and distributional RL is policy learning with forward KL.</p>
 
-        <h4>Standard RL</h4>
+        <h4 id="standard-RL">Standard RL</h4>
 
         <p>First let's set up RL independent of all this. You are given reward function $r(\sT)$ and base policy $\base(\sT)$. For simplicity and connection to LLMs (which are contextual bandits), we will assume that this reward is only assigned to full sequences and is zero otherwise. RL can be KL-constrained, which it means that it balances maximizing reward with remaining close to the original policy with regularization strength $\beta$ (I think they flipped $\beta$ here so low $\beta$ means high regularization). Overloading notation, the goal is to find a policy $q^{\theta}(\sT)$ that maximizes the reward</p>
 
@@ -287,11 +278,52 @@
             \end{aligned}
         </p>
 
-        <p>(recall that $\KL{p||q} = \Eof{s\sim p}{\log p - \log q}$). The above derivation shows how maximizing the reward in RL corresponds to minimizing the reverse KL divergence with a specific target distribution $\targetRL$ (since $\partition_{\targetRL}$ is a constant). Importantly, this target distribution is the same as our standard sampling target $\target$ if we set $\potential(\sT) = e^{\beta r(\sT)}$!! Therefore, both RL and TSMC have the same objective. However, they go for this with two different divergences: TSMC aims to minimize forward KL whereas RL aims to minimize reverse KL. TODO reference some picture discerning mode-seeking and mass-covering. </p>
+        <p>The above derivation shows how maximizing the reward in RL corresponds to minimizing the reverse KL divergence with a specific target distribution $\targetRL$ (since $\partition_{\targetRL}$ is a constant). This target distribution is the same as our standard sampling target $\target$ if we set $\potential(\sT) = e^{\beta r(\sT)}$! Though RL and TSMC have the same minimizer, they go for this with two different divergences: TSMC aims to minimize forward KL whereas RL aims to minimize reverse KL. Forward KL corresponds to covering the mass of the data distribution since you need to give nonzero likelihood to all samples. On the other hand, reverse KL encourages mode seeking behavior since you only care about the likelihood of samples generated under your own policies. This idea shows up a lot in generative modeling, with the following intuitive picture (Figure 1).</p>
+
+        <figure>
+            <img src="../images/tsmc/kls.png" style="height: 200px;">
+            <figcaption>Figure 1: Even though the minimizers are the same, forward KL (TSMC) incentivizes mass-covering behavior whereas reverse KL (RL) incentivizes mode-seeking behavior. Taken from <cite><a href="https://arxiv.org/abs/2402.00856">Ji et al, 2025</a></cite> (I have not read the paper)</figcaption>
+            </p>
+        </figure>
+
+        <p>The typical way to optimize for this objective is via the policy gradient, which corresponds to the gradient of the expected rewards with respect to the generator policy; this is commonly implemented using REINFORCE or PPO. You may find this introduction to (off-policy) RL instructive to learn about how to optimize this objective (for both this section and the next section).</p>
+
+        <h4 id="value">Soft RL (value-based)</h4>
+
+        <p>Value-based RL comes from viewing the same KL-constrained RL problem with a different angle. Instead of taking the gradient with the expected rewards, valued-based RL finds a condition that the optimal policy must satisfy. It then optimizes this consistency loss.</p>
+
+        <br>
+
+        <p>We first define the soft value function for a given state $\st$ as</p>
+
+        <p class="math">
+            \begin{equation}\label{eq:value-marginal}V_t(\st) = \frac{1}{\beta} \log \sum_{s_{t+1:T}} \base(s_{t+1:T} | \st)e^{\beta r(\sT)}\end{equation}
+        </p>
+
+        <p>where $V_T(\sT) = r(\sT)$ (this differs from the paper since we assume no intermediate rewards, or $r(\st) = 0$ for $t < T$). Intuitively, for a given state, this captures how much reward we expect to get if we sampled a trajectory from this state. We can also write this quantity recursively as</p>
+
+        <p class="math">
+            \begin{equation}\label{eq:value-bellman}e^{\beta V_t(\st)} = \sum_{s_{t+1}} \base(s_{t+1} | \st) e^{\beta V_{t+1}(s_{1:t+1})}\end{equation}
+        </p>
+
+        <p>We can convert this into a consistency objective by ensuring that our estimates of the values are consistent with each other. This is called the soft Bellman operator and forms the basis of most value-based RL methods such as soft Q-learning <cite><a href="https://arxiv.org/abs/1702.08165">(Haarnoja et al, 2018)</a></cite> and path consistency learning <cite><a href="https://arxiv.org/abs/1702.08892">(Nachum et al, 2017)</a></cite>.</p>
+
+        <br>
+
+        <p>Note that the conditions of the optimal twist look awfully similar to the conditions of the optimal value function: Equation \eqref{eq:twist-marginal} maps to \eqref{eq:value-marginal} and Equation \eqref{eq:twist-bellman} maps to \eqref{eq:value-bellman}. In fact, the twist function directly maps to the value function!</p>
+
+        <p class="math">
+            \begin{aligned}
+            &\potential_T (\sT) = e^{\beta r_T(\sT)} &&r_T(\sT) = \frac{1}{\beta} \log \potential_T (\sT) \\
+            &\twist_t(\st) = e^{\beta V_t(\st)} &&V_t(\st) = \frac{1}{\beta} \log \twist_t (\st)
+            \end{aligned}
+        </p>
+
+        <p>Nice, twisting is actually just learning the value function (with a different divergence) in disguise! In the paper, the authors show that $\twist_t$ actually corresponds to the $Q$ function, which is defined as accepting an action $s_t$ via $Q_t(s_t, s_{1:t-1}) = V_t(\st) + r(s_{1:t})$. Since we are assuming there is no intermediate reward, we have that $Q_t(s_t, s_{1:t-1}) = V_t(\st)$ and we get to collapse their new notation $\Phi_t$ as equivalent to $\twist_t$.</p>
 
         <h4>Distributional RL</h4>
 
-        <p>Can we do forward KL RL with respect to the optimal (target) policy? This KL requires sampling from the ground truth distribution. If we had samples from the ground truth distribution, we could use them, and this corresponds to standard behavior cloning with cross entropy loss </p>
+        <p>Can we fix the divergence of policy gradient and soft RL while retaining the benefits of maintaining a single policy? Minimizing the forward KL requires sampling from the ground truth distribution. If we had samples from the ground truth distribution, we could use them, and this corresponds to standard behavior cloning with cross entropy loss </p>
 
         <p class="math">
             \begin{aligned}
@@ -302,7 +334,7 @@
             \end{aligned}
         </p>
             
-        <p>Besides, isn't RL supposed to involve sampling from your current policy? Therefore, we have to apply some form of importance sampling to properly account for forward KL. The most naive importance sampling method would correspond to</p>
+        <p>Unfortunately, we don't have sampling access to the base policy, and we might not have samples from the ground truth as well. Besides, isn't RL supposed to involve sampling from your current policy? We can remedy these issues by appling importance sampling to properly account for forward KL. This natural importance sampling method would correspond to</p>
 
         <p class="math">
             \begin{aligned}
@@ -313,17 +345,21 @@
             \end{aligned}
         </p>
 
-        <p>which corresponds to standard importance sampling. This can also be self-normalized instead of vanilla importance sampling. Also, instead of reweighting the gradients, one can reweight the samples: i.e. sample according to SNIS and then treat the samples as if they were from the target policy. But the main ideas is that DPG works by sampling positives.</p>
+        <p>which corresponds to standard importance sampling. There are a couple design decisions on how to approximate this expectation when drawing a batch of samples from proposal $q_\theta$. The first choice is whether to use self-normalized importance sampling (estimating your partition function from the batch). If using SNIS, the second choice is whether to apply the importance weights when resampling from the proposal batch or when computing the gradients. Regardless, the main idea of Distributional Policy Gradient (DPG) is to estimate this expectation via importance sampling from your policy. Unfortunately, your proposal distribution will often be high variance, making it difficult to apply this algorithm. </p>
 
-        <h3>Comparing everything</h3>
+        <h3>Partition function evaluation</h3>
 
-        <h3>Evaluation via partition function estimation</h3>
+        <p>I will not go into depth here, but you can evaluate the quality of your sampling algorithm by how well it estimates the partition function. Namely, you can construct upper and lower bounds on the partition function with your chosen sampling weights. The paper claims that a good sampling algorithm would correspondingly have tight bounds on $\log \partition$, making it a good task to evaluate models on. In Figure 2, sampling using the twisted proposal $q^{\pi}$ results in really tight bounds on $\log \partition$ with few samples, implying that this provides a lot of variance reduction. One can evaluate the quality of simple importance sampling and SMC by comparing the tightness of the bounds equipped with a worse proposal (the base policy $\base$).</p>
 
-        <h3>Results?</h3>
+        <figure>
+            <img src="../images/tsmc/logzest.png" style="width:40%">
+            <figcaption>Figure 2: Estimation is possible when you twist your proposal or twist your SMC. Taken from Figure 3</figcaption>
+            </p>
+        </figure>
 
-        <!-- <h3>Conclusion</h3>
+        <h3>Conclusion</h3>
 
-        <p>Data augmentation is a powerful tool for leveraging invariances in data unknown to the training process. Hopefully, we can make it more scalable by leveraging structure in the augmentation distribution, like we can for permutation invariance. Thank you for reading, and feel free to reach out with any questions or thoughts!</p>         -->
+        <p>The paper discusses the connection between reinforcement learning and probabilistic inference, showing how one can approach the sampling problem either through learning proposals or learning twist functions. I didn't cover some other aspects such as conditional sampling and bidirectional Monte Carlo, please read the paper if you're interested. In general, I find these clever sampling algorithms quite cool, giving a lot of gains for very little problem structure. Thank you for reading, and feel free to reach out with any questions or thoughts!</p>
 
         <script type="text/javascript" src="../js/post.js"></script>
     </div>
