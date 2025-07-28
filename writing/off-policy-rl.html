@@ -21,7 +21,7 @@
     </script>
     <script type="text/javascript" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS_CHTML"></script>
     </script>
-    <meta name="description" content="Introduction to Off-Policy RL">
+    <meta name="description" content="Off-Policy RL">
     <meta name="author" content="Suhas Kotha">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link href='https://fonts.googleapis.com/css?family=Quicksand' rel='stylesheet' type='text/css'>
@@ -51,7 +51,7 @@
         <!-- \newcommand{\clip}[3]{\texttt{clip}(#1, #2, #3)} -->
 
         <br>
-        <p style="text-align: center;">6/11/2025</p>
+        <p style="text-align: center;">7/28/2025</p>
         <br>
 
         <!-- Outline
@@ -62,6 +62,10 @@
             <img src="../images/permpig/linreg_fixed_perms.png" style="max-width: 95%; height: auto;">
             <figcaption>Figure 1: Training loss for different methods. $k$ is the number of data points synthesized per real data point. $k=1$ is standard training, $k>1$ is standard augmentation, and $k=\infty$ is the true expected gradient. </figcaption>
         </figure> -->
+
+        <p>Reinforcement learning allows one to train policies by scoring their generations with an arbitrary reward model. In the simpest version of RL, you generate from a model $\pi$ and also differentiate with respect to it. From a systems perspective, its desirable to have a different policy generate the trajectories. This is because inference might be lagging behind training, you want to take multiple gradient steps per rollout, inference might use a different precision, etc. In this article, we will take a first principles look at the design decisions for dealing with this problem of off-policy RL.</p>
+
+        <br>
 
         <p>Massive credit to <a href="https://www.konwoo.kim/">Konwoo</a> for teaching me basically everything shared here.</p>
 
@@ -74,7 +78,7 @@
             \end{aligned}
         </p>
 
-        <p>for rollouts $\tau$ scored by a reward function $R$. Though there are traditionally inputs $x$ associated with the rollouts, we will suppress them for simplicity. Akin to supervised machine learning, we would like to take the derivative of $J(\theta)$ with respect to $\theta$ and update $\theta$ in the direction of the gradient. However, this is not a differentiable reward function and the naive gradient would be zero. REINFORCE constructs the policy gradient by utilizing the reparameterization trick. This utilizes the log-gradient trick to compute the gradient as shown below.</p>
+        <p>for rollouts $\tau$ scored by a reward function $R$. Though there are traditionally inputs $x$ associated with the rollouts, we will suppress them for simplicity. Akin to supervised machine learning, we would like to take the derivative of $J(\theta)$ with respect to $\theta$ and update $\theta$ in the direction of the gradient. However, this derivative is different since (1) the reward function is not differentiable and (2) the sampler is your policy, not a separate data generating process. REINFORCE constructs the policy gradient by utilizing the log-gradient trick as shown below.</p>
         <p class="math">
             \begin{aligned}
             \nabla_\theta J(\theta) &= \nabla_\theta \Eof{\tau \sim \pitheta} {R(\tau)} \\
@@ -88,23 +92,23 @@
 
         <h4>Computing via autograd</h4>
             
-        <p>To actually compute the policy gradient, it is standard to construct a surrogate reward function such thats PyTorch's autograd can differentiate through it. We note there are two ways to do this. The first method applies the log-gradient trick in reverse and leverages $\frac{\nabla_\theta \pitheta(\tau)}{\pitheta(\tau)}$ with the objective</p>
+        <p>To actually compute the policy gradient, it is standard to construct a surrogate reward function that PyTorch's autograd can differentiate through. We note there are two ways to do this. The first method applies the log-gradient trick in reverse and leverages $\frac{\nabla_\theta \pitheta(\tau)}{\pitheta(\tau)}$ with the objective</p>
         <p class="math">
             \begin{equation}\label{eq:on-policy-surrogate-1}
             J(\theta) = \Eof{\tau \sim \pitheta} {\frac{\pitheta(\tau)}{\texttt{detach}(\pitheta(\tau))} {R(\tau)}}
             \end{equation}
         </p>
-        <p>where the $\texttt{detach}$ operator signifies that we are not differentiating through the denominator. This is equal in value to the expected reward but yields a different gradient. The second method directly exploits the fact that the policy gradient uses $\nabla_\theta \log \pitheta(\tau)$ by</p>
+        <p>where the $\texttt{detach}$ operator signifies that we are not differentiating through the denominator. The second method directly exploits the fact that the policy gradient uses $\nabla_\theta \log \pitheta(\tau)$ by constructing the surrogate reward</p>
         <p class="math">
             \begin{equation}\label{eq:on-policy-surrogate-2}
             J(\theta) = \Eof{\tau \sim \pitheta} {\log \pitheta(\tau) {R(\tau)}}
             \end{equation}
         </p> 
-        <p>Note that the even though the first and second methods are not equivalent in value, their gradients are the same (both correspond to the policy gradient). Therefore, in our on-policy setting, both methods are exactly the same.</p>
+        <p>Note that the even though the first and second methods are not equivalent in value, their gradients are the same (both correspond to the policy gradient). Therefore, in our vanilla on-policy setting, both methods are exactly the same.</p>
 
         <h4>Using a baseline</h4>
 
-        <p>Though this gradient is unbiased, we might want to reduce its variance. One way to do this is to subtract a baseline $b$ from the reward. This doesn't change the expected policy gradient, as shown below.</p>
+        <p>Though this is an unbiased estimate of the policy gradient, we are estimating it with a finite number of data points and might want to reduce its variance. One way to do this is to subtract a baseline $b$ from the reward. As long as this is independent of the trajectory $\tau$, this doesn't change the expected policy gradient, as shown below.</p>
 
         <p class="math">
             \begin{aligned}
@@ -132,7 +136,7 @@
             \nabla_\theta J(\theta) = \Eof{\tau \sim \pigen} {\frac{\pitheta(\tau)}{\pigen(\tau)} \nabla_\theta \log \pitheta(\tau) {R(\tau)}}
             \end{aligned}
         </p>
-        <p>where $\pigen$ is the policy that generated the data. In expectation, this is the same as the on-policy policy gradient. However, this estimator has incredibly high variance because the importance sampling weights can very large; this is worsened the further off-policy we are. How can we address this?</p>
+        <p>where $\pigen$ is the policy that generated the data. In expectation, this is the same as the on-policy policy gradient. However, this estimator has incredibly high variance because the importance sampling weights can get very large; this is worsened the further off-policy we are. How can we address this?</p>
 
         <h4>Clipping in PPO/TRPO</h4>
 
@@ -150,13 +154,17 @@
 
         <p>On a historical note, people have really not tried to change PPO that much. For example, in the original paper, they tuned the clipping parameter $\epsilon$ to be $0.2$ after trying $0.1$ and $0.3$. DAPO <cite>(<a href="https://arxiv.org/abs/2503.14476">Yu et al, 2025</a>)</cite> notes that people have defaulted to this practice since, and they found that using $0.28$ led to much better performance, confirmed by papers such as Magistral <cite>(<a href="https://arxiv.org/abs/2506.10910">Mistral-AI, 2025</a>)</cite>. </p>
 
+        <br>
+
+        <p>Also note that this isn't all there is to PPO. It also has other features such as learning a value function for the baseline, boostrapping, entropy bonuses, etc. We will not study these today.</p>
+
         <h4>Correct clipping for less conservative updates</h4>
 
-        <p>The conservativeness of the PPO update is motivated by classical intuition from "trust regions" where one should not stray too far from the reference policy. In older RL settings, the generator policy is frequently reset to the current policy, promoting the use of updates that don't stray too far from the initial policy.</p>
+        <p>The conservativeness of the PPO update is motivated by classical intuition from "trust regions" and the natural policy gradient <cite><a href="https://proceedings.neurips.cc/paper_files/paper/2001/file/4b86abe48d358ecf194c56c69108433e-Paper.pdf">(Kakade, 2002)</a></cite> where one should not stray too far from the reference policy. In older RL settings, the generator policy is frequently reset to the current policy, promoting the use of updates that don't stray too far from the initial policy.</p>
 
         <br>
         
-        <p>However, this can prevent going further off-policy. One striking failure mode of PPO is that for positive updates that trigger clipping, the policy will not move <b>at all</b>. This is because when clipping triggers, the importance sampling weight becomes a constant, the reward is also a constant, and the gradient becomes zero. Though this is desired under the trust region intuition, this prevents more aggressive off-policy RL. Though we still need clipping for stability, we can apply it directly to the policy gradient via the following expression:</p>
+        <p>However, this can prevent going further off-policy. One striking failure mode of PPO is that the policy will not move at all for positive updates that trigger clipping. This is because when clipping triggers, the importance sampling weight becomes a constant, the reward is also a constant, and the gradient becomes zero. Though this is desired under the trust region intuition, this prevents more aggressive off-policy RL. Though we still need clipping for stability, we can apply it directly to the policy gradient via the following expression:</p>
         <p class="math">
             \begin{aligned}
             \nabla_\theta J(\theta) = \Eof{\tau \sim \pigen} {\clip{\frac{\pitheta(\tau)}{\pigen(\tau)}}{1-\epsilon}{1+\epsilon} \nabla_\theta \log \pitheta(\tau) {R(\tau)}}
@@ -168,7 +176,7 @@
             J(\theta) = \Eof{\tau \sim \pigen} {\clip{\texttt{detach}\left(\frac{\pitheta(\tau)}{\pigen(\tau)}\right)}{1-\epsilon}{1+\epsilon} \log \pitheta(\tau) {R(\tau)}}
             \end{aligned}
         </p>
-        <p>Similar to the dichotomy between Equation \eqref{eq:on-policy-surrogate-1} and Equation \eqref{eq:on-policy-surrogate-2}, this reward and the PPO reward have different values, but yield the same gradient when there is no clipping.However, when there is clipping, the corrected reward yields nonzero gradient, unlike PPO. This is the approach followed by Minimax in their CISPO objective <cite>(<a href="https://arxiv.org/abs/2506.13585">Minimax, 2025</a>)</cite> and by Meta in their asynchronous RL implementation <cite>(<a href="https://arxiv.org/abs/2525.24034">Wu et al, 2025</a>)</cite>. In both implementations, they only clip the upper bound. This less conservative approach works much better in practice and enables going further off-policy. From here on out, we will always take clip the importance sampling ratio in the gradients, not rewards.</p>
+        <p>Similar to the dichotomy between Equation \eqref{eq:on-policy-surrogate-1} and Equation \eqref{eq:on-policy-surrogate-2}, this reward and the PPO reward have different values, but yield the same gradient when there is no clipping. However, when there is clipping, the corrected reward yields nonzero gradient, unlike PPO. This is the approach followed by Minimax in their CISPO objective <cite>(<a href="https://arxiv.org/abs/2506.13585">Minimax, 2025</a>)</cite> and by Meta in their asynchronous RL implementation <cite>(<a href="https://arxiv.org/abs/2525.24034">Wu et al, 2025</a>)</cite>. In both implementations, they only set an upper bound for clipping. This less conservative approach works better in practice and enables going further off-policy. From here on out, we will always clip the importance sampling ratio in the gradients, not rewards.</p>
 
         <!-- <h4>Toy example comparing both approaches</h4>
 
@@ -199,41 +207,45 @@
 
         <p>This fact has been observed in recent papers in the context of REINFORCE with no importance sampling where they find that calibrating this term helps (<cite><a href="https://arxiv.org/abs/2506.20520">Arnal et al, 2025</a></cite>, <cite><a href="https://arxiv.org/abs/2503.14286">Le Roux et al, 2025</a></cite>) and in the context of older papers on off-policy bandits on a batch level (<cite><a href="https://arxiv.org/abs/1502.02362">Swaminathan and Joachims, 2015</a></cite>). Our bias is slightly different in that it comes from clipped importance sampling weights which one hopes is closer to the true policy gradient.</p>
 
-        <p>TODO: empirical results of calibrating the reward shift</p>
+        <h3>Operator view of the policy gradient</h3>
 
-        <h3>Potential idea: Removing clipping with smarter importance sampling</h3>
-
-        <p>Seems like clipping is introducing a lot of issues by introducing bias and breaking shift-invariance. Is there a better way to do off-policy RL? It is well known that importance sampling isn't necessarily the lowest variance estimator. Here, we consider using self-normalized importance sampling for estimating the policy gradient. This corresponds to</p>
+        <p>There is a very cute interpretation of the policy gradient as the gradient of the KL divergence between the policy improvement operator and the current policy (Konwoo and I learned from <cite><a href="https://arxiv.org/abs/2006.11266"> Ghosh et al, 2020</a></cite>). Specifically, define the policy improvement operator of a policy $\pi$ as $\mathcal{R}\pi$ defined by</p>
 
         <p class="math">
             \begin{aligned}
-            \nabla_\theta J(\theta) = \Eof{\tau \sim \pigen} {\frac{\frac{\pitheta(\tau)}{\pigen(\tau)}}{\Eof{\tau' \sim \pigen} {\frac{\pitheta(\tau')}{\pigen(\tau')}}} \nabla_\theta \log \pitheta(\tau) {R(\tau)}}
+            \mathcal{R}\pi(\tau) := \frac{R(\tau) \cdot \pi(\tau)}{\int_{\tau'} R(\tau) \cdot\pi({\tau'})}
             \end{aligned}
         </p>
 
-        <p>In practice, for a batch of trajectories, one would estimate the denominator using the mean of the importance sampling weights for the batch. Though this weighting scheme is biased (unlike importance sampling which replaces the denominator with 1), it is consistent (i.e. it is unbiased in the limit of infinite samples). Additionally, it is often much lower variance than the importance sampled policy gradient. </p>
+        <p>Note that the optimal policy is a fixed point of this operation, namely $\mathcal{R}\pi^* = \pi^*$. When generating data from a (detached) policy $\pigen$ for a policy $\pitheta$, it can be shown that the vanilla REINFORCE policy gradient is proportional to $-\nabla_{\theta} \text{KL}(\mathcal{R}\pigen || \pitheta).$</p>
+
+        <p class="math">
+            \begin{aligned}
+            & -\nabla_{\theta} \text{KL}(\mathcal{R}\pigen || \pitheta) \\
+            &= -\nabla_{\theta} \Eof{\mathcal{R}\pigen}{\log \mathcal{R}\pigen(\tau) - \log \pitheta(\tau)} && \text{[definition]} \\
+            &= -\nabla_{\theta} \Eof{\mathcal{R}\pigen}{- \log \pitheta(\tau)} && \text{[drop constant]} \\
+            &= \nabla_\theta \int_{\tau} {\frac{R(\tau) \cdot \pigen(\tau)}{\int_{\tau'} R(\tau)\cdot\pigen({\tau'})} \log \pitheta(\tau)} && \text{[convert to integral]} \\
+            &\propto \nabla_\theta \int_{\tau} {R(\tau) \pigen(\tau)  \log \pitheta(\tau)} && \text{[drop constant]} \\
+            &= \int_{\tau} {R(\tau) \pigen(\tau) \nabla_\theta  \log \pitheta(\tau)} && \text{[change order]} \\
+            &= \Eof{\tau \sim \pigen}{R(\tau) \nabla_\theta \log \pitheta(\tau)} && \text{[convert to expectation]} \\
+            \end{aligned}
+        </p>
+
+        <p>and we've recovered the original policy gradient! Therefore, we can view the policy gradient as taking one step closer to the policy under the operator.</p>
 
         <br>
 
-        <p>One hope is that this sampler is lower variance than no clipping but is less biased than clipping. Not good enough unfortunately. TODO EMPIRICAL RESULTS. </p>
+        <p>This explains a lot of the phenomenon we're seeing. The most interesting one is the cloning: if we retain a stale generator policy, then we converge to $\mathcal{R}\pigen$, which is not the optimal policy. In on-policy land, since we continually reset the generator, we iteratively approach the optimal policy.</p>
 
         <h3>Token level</h3>
 
-        <p>TODO just importance sample at the token level not the trajectory level</p>
-
-        <h3>Potential idea: Robust mean estimaton for the gradient</h3>
-
-        <p>TODO MAYBE, doesn't work</p>
-
-        <h3>Potential idea: KL regularization with a reference policy</h3>
-
-        <p>TODO, reduces variances but also leads to the wrong loss minimizer</p>
-
-        <h3>Value-based RL</h3>
-
-        <p>TODO: share original motivation and cite foundational papers more clearly.  TLDR: minimize a consistency objective over data generated by anything. Unclear how it stacks up in practice.</p>
+        <p>So far, since we have treated this problem as contextual bandits where each trajectory is a single step. However, real language has multiple tokens per trajectory. Unlike older RL settings, many popular reward functions (i.e. is the solution to this math problem correct) only assign outcome-level rewards instead of rewarding intermediate tokens. Therefore, we can mostly proceed with our algorithms as earlier, assuming that each token receives the reward of the final outcome.</p>
 
         <br>
+
+        <p>However, when we are clipping the importance sampling ratios, it will be different based on whether we clip at a token level or sequence level. It is unclear how to handle this: though sequence-level is the principled solution, it will incur much higher variance than the token-level importance sampling weights. Group Sequence Policy Optimization <cite><a href="https://www.arxiv.org/abs/2507.18071">(Zheng et al, 2025)</a></cite> claims that sequence level is better, but they have to do a length normalization to make the sampling ratio stable. This shows that there are different ways to handle the bias/variance tradeoff with different properties.</p>
+
+        <h3>Value-based RL</h3>
 
         <p>A different, potentially more principled approach is to use value-based RL/soft-Q learning. Under this paradigm, we exploit the fact that we can characterize the optimal policy even if we can't compute it. This gives rise to a condition that only the optimal policy satisfies. We can formulate this as a consistency objective over any generations, which can minimize using gradient descent.</p>
 
@@ -247,7 +259,7 @@
             \end{aligned}
         </p>
 
-        <p>It is well known that the minimizer of the above objective is the following (proof TODO)</p>
+        <p>It is known that the minimizer of the above objective is the following</p>
 
         <p class="math">
             \begin{aligned}
@@ -255,7 +267,7 @@
             \end{aligned}
         </p>
 
-        <p>where $Z = \int_{\tau} \piref(\tau) \exp\left(\frac{R(\tau)}{\beta}\right) d\tau$ is the partition function, making this a valid distribution. This is also called the value function. This means that the optimal policy satisfies</p>
+        <p>where $Z = \int_{\tau} \piref(\tau) \exp\left(\frac{R(\tau)}{\beta}\right) d\tau$ is the partition function, making this a valid distribution (proof in Appendix TODO). $\beta\log Z$ is also called the soft-value function, quantifying the expected reward from generating with the current policy. This means that the optimal policy satisfies</p>
 
         <p class="math">
             \begin{aligned}
@@ -285,7 +297,33 @@
 
         <p>RANDOM NOTE: the $\ell_2$ regularizer is an unbiased estimator of the gradient of the KL divergence when the sampler is $\pitheta$, as shown in Appendix <a href="#app-b">B</a>.</p>
 
-        <p>TODO EMPIRICAL RESULTS. </p>
+        <h3>Potential idea graveyeard</h3>
+
+        <p>Here are a couple of ideas that didn't pan out.</p>
+
+        <h4>Potential idea: Removing clipping with smarter importance sampling</h4>
+
+        <p>It seems like clipping is introducing a lot of issues by introducing bias and breaking shift-invariance. Is there a better way to do off-policy RL? It is well known that importance sampling isn't necessarily the lowest variance estimator. Here, we consider using self-normalized importance sampling for estimating the policy gradient. This corresponds to</p>
+
+        <p class="math">
+            \begin{aligned}
+            \nabla_\theta J(\theta) = \Eof{\tau \sim \pigen} {\frac{\frac{\pitheta(\tau)}{\pigen(\tau)}}{\Eof{\tau' \sim \pigen} {\frac{\pitheta(\tau')}{\pigen(\tau')}}} \nabla_\theta \log \pitheta(\tau) {R(\tau)}}
+            \end{aligned}
+        </p>
+
+        <p>In practice, for a batch of trajectories, one would estimate the denominator using the mean of the importance sampling weights for the batch. Though this weighting scheme is biased (unlike importance sampling which replaces the denominator with 1), it is consistent (i.e. it achieves the true policy gradient in the limit of infinite samples). Additionally, it is often much lower variance than the importance sampled policy gradient. </p>
+
+        <br>
+
+        <p>Unfortunately, this did not work in the toy setting of interest. </p>
+
+        <h4>Potential idea: Robust mean estimaton for the gradient</h4>
+
+        <p>TODO MAYBE, doesn't work</p>
+
+        <h4>Potential idea: KL regularization with a reference policy</h4>
+
+        <p>TODO, reduces variances but also leads to the wrong loss minimizer. Maybe okay with multiple iterations.</p>
 
         <h3>Appendix</h3>
 
@@ -322,11 +360,21 @@
         <p>Similar to how there are two ways to set up the reward for the policy gradient, there are two quantities that yield the same KL gradient.</p>
 
         <ol>
-            <li>Squared gradient estimator: $\Eof{\tau \sim \pitheta} {\frac{1}{2} \left(\log \pitheta(\tau) - \log \piref(\tau) \right)^2}$
-            <br>
+            <li>Squared gradient estimator: 
+            <p class="math">
+                \begin{aligned}
+                \Eof{\tau \sim \pitheta} {\frac{1}{2} \left(\log \pitheta(\tau) - \log \piref(\tau) \right)^2}
+                \end{aligned}
+            </p>
             This estimator, introduced by John Schulman in his blog, is actually a biased estimator of the KL divergence and achieves low error when the policies are close to each other <cite>(<a href="https://joschu.net/blog/kl-approx.html, 2017">Schulman et al, 2017</a>)</cite>. Interestingly, it is always an unbiased estimator of the KL divergence.</li>
-            <li>Surrogate KL: $\Eof{\tau \sim \pitheta} {\log\pitheta(\tau) \texttt{ detach}\left(\log\pitheta(\tau) - \log\piref(\tau)\right)}$
-            <br>This estimator exploits autograd for a simpler expression, similar to our surrogate reward for policy gradient.</li>
+            <li>Surrogate KL: 
+
+            <p class="math">
+                \begin{aligned}
+                \Eof{\tau \sim \pitheta} {\log\pitheta(\tau) \texttt{ detach}\left(\log\pitheta(\tau) - \log\piref(\tau)\right)}
+                \end{aligned}</p>
+            
+            This estimator exploits autograd for a simpler expression, similar to our surrogate reward for policy gradient.</li>
         </ol>
 
         <p>Note that the naive unbiased estimator of $\Eof{\tau \sim \pitheta} {\log \pitheta(\tau) - \log \piref(\tau)}$ does not yield the correct derivative: in fact, its value is zero by Appendix A.</p>
