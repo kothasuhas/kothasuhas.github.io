@@ -29,8 +29,8 @@ var brightness = function(hex) {
 var setColors = function(a, b, c) {
     var rgb = h2rgb(a);
     document.getElementById("autogen").innerHTML = "a { color: "+c+"; }\nhtml { background-image: linear-gradient(135deg, "+a+", "+b+"); }\n";
-    document.getElementById("autogen").innerHTML += "::selection { background-color: rgba("+rgb.r+", "+rgb.g+", "+rgb.b+", 0.2); }";
-    document.getElementById("autogen").innerHTML += "::-moz-selection { background-color: rgba("+rgb.r+", "+rgb.g+", "+rgb.b+", 0.2); }";
+    // document.getElementById("autogen").innerHTML += "::selection { background-color: rgba("+rgb.r+", "+rgb.g+", "+rgb.b+", 0.2); }";
+    // document.getElementById("autogen").innerHTML += "::-moz-selection { background-color: rgba("+rgb.r+", "+rgb.g+", "+rgb.b+", 0.2); }";
     
     if (brightness(b) > 200) {
         document.body.classList.add("inverted");

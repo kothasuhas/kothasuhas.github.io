@@ -31,8 +31,8 @@ var setColors = function(a, link_color) {
     var rgb = h2rgb(a);
     var rgb_link = h2rgb(link_color);
     document.getElementById("autogen").innerHTML = "a { color: "+link_color+"; }\nhtml { background-image: linear-gradient(135deg, "+a+", "+b+"); }\n";
-    document.getElementById("autogen").innerHTML += "::selection { background-color: rgba("+link_color.r+", "+link_color.g+", "+link_color.b+", 1.0); }";
-    document.getElementById("autogen").innerHTML += "::-moz-selection { background-color: rgba("+link_color.r+", "+link_color.g+", "+link_color.b+", 1.0); }";
+    // document.getElementById("autogen").innerHTML += "::selection { background-color: rgba("+link_color.r+", "+link_color.g+", "+link_color.b+", 1.0); }";
+    // document.getElementById("autogen").innerHTML += "::-moz-selection { background-color: rgba("+link_color.r+", "+link_color.g+", "+link_color.b+", 1.0); }";
     
     if (brightness(b) > 200) {
         document.body.classList.add("inverted");
