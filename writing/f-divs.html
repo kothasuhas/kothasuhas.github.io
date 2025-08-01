@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en" id="html">
+
+<head>
+    <meta charset="utf-8">
+    <title>Suhas Kotha</title>
+    <!-- <script src="jquery-3.6.3.min.js"></script> -->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script type="text/x-mathjax-config">
+        MathJax.Hub.Config({
+          tex2jax: {
+            inlineMath: [['$', '$'], ['\\(', '\\)']],
+            displayMath: [['$$', '$$'], ['\\[', '\\]']],
+            processEscapes: true
+          },
+          TeX: {
+            extensions: ["AMSmath.js", "AMSsymbols.js"],
+            equationNumbers: { autoNumber: "AMS" }
+          },
+        });
+    </script>
+    <script type="text/javascript" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS_CHTML"></script>
+    </script>
+    <meta name="description" content="Off-Policy RL">
+    <meta name="author" content="Suhas Kotha">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href='https://fonts.googleapis.com/css?family=Quicksand' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" href="../css/style.css?v=<?php echo rand(); ?>">
+    <link rel="icon" type="image/png" href="../images/dragon_logo.png">
+    <style id="autogen"></style>
+</head>
+
+<body style="max-width: 100%; margin: 0 auto;">
+    <p><a href=../index.html>Home</a></p>
+    <div class="blog-post">
+        <br>
+
+        <h1>$f$-divergences</h1>
+        <h1>!work in progress!</h1>
+
+        \(
+        \def\R{\mathbb{R}}
+        \def\model{q_\theta}
+        \newcommand{\fd}[2]{D_f(#1 \; \| \; #2)}
+        \newcommand{\Eof}[2]{\mathbb{E}_{#1}\left[#2\right]}
+        \newcommand{\p}[1]{\left(#1\right)}
+        \newcommand{\b}[1]{\left[#1\right]}
+        \newcommand{\br}[1]{\left\{#1\right\}}
+        \)
+
+        <br>
+        <p style="text-align: center;">7/31/2025</p>
+        <br>
+
+        <p>Fix $p$ to be real data and $q$ to be model. Define $f$-divergences as</p>
+
+        <br>
+
+        <p class="math">
+            $\fd{p}{q} = \sum_x q(x) f\p{\frac{p(x)}{q(x)}} = \Eof{x\sim q}{f\p{\frac{p(x)}{q(x)}}}$
+        </p>
+
+        <br>
+
+        <p>
+            For example, KL divergence corresponds to $f(x) = x\log x$. Let's assume the model $\model$ is parameterized by some parameters $\theta$. What is the gradient of the divergence with respect to $\theta$?
+        </p>
+
+        <br>
+
+        <p class="math">
+            \begin{aligned}
+            &\nabla_\theta \fd{p}{\model} \\
+            &= \nabla_\theta \sum_x \model(x) f\p{\frac{p(x)}{\model(x)}} \\
+            &= \sum_x \nabla_\theta \model(x) f\p{\frac{p(x)}{\model(x)}} + \model(x) \nabla_\theta f\p{\frac{p(x)}{\model(x)}} && \text{[product rule]}\\
+            &= \sum_x \nabla_\theta \model(x) f\p{\frac{p(x)}{\model(x)}} - \model(x) f'\p{\frac{p(x)}{\model(x)}}\frac{p(x)}{\model(x)^2}\nabla \model(x) && \text{[chain rule]}\\
+            &= \sum_x \nabla_\theta \model(x) \p{f\p{\frac{p(x)}{\model(x)}} - \frac{p(x)}{\model(x)}f'\p{\frac{p(x)}{\model(x)}}} && \text{[rearrange]}\\
+            &= \sum_x \model(x) \nabla_\theta \log \model(x) \p{f\p{\frac{p(x)}{\model(x)}} - \frac{p(x)}{\model(x)}f'\p{\frac{p(x)}{\model(x)}}} && \text{[log-gradient trick]}\\
+            &= \Eof{x\sim \model(x)}{\nabla_\theta \log \model(x) \p{f\p{\frac{p(x)}{\model(x)}} - \frac{p(x)}{\model(x)}f'\p{\frac{p(x)}{\model(x)}}}} && \text{[expectation]}\\
+            &= \Eof{x\sim p(x)}{\frac{\model(x)}{p(x)}\nabla_\theta \log \model(x) \p{f\p{\frac{p(x)}{\model(x)}} - \frac{p(x)}{\model(x)}f'\p{\frac{p(x)}{\model(x)}}}} && \text{[importance sampling]}\\
+            &= \Eof{x\sim p(x)}{\nabla_\theta \log \model(x) \p{\frac{f\p{t}}{t} - f'\p{t}}}\\
+            & \text{for }t = \frac{p(x)}{\model(x)}\\
+            \end{aligned}
+        </p>
+
+        <p>We note that for some modifications of $f$, the gradient does not change at all. For example, if we map $f(t) \to f(t) + t$, the value of $\frac{f\p{t}}{t} - f'\p{t}$ does not change at all. Alternatively, if we map $f(t) \to f(t) + 1$, the gradient has an additional $\Eof{x\sim p(x)}{\frac{1}{t}\nabla_\theta \log \model(x)}$ which is importance sampled $\Eof{x\sim \model(x)}{\nabla_\theta \log \model(x)}$ which is zero (shown in RL post <a href="https://kothasuhas.github.io/writing/off-policy-rl.html#app-a">here</a>). </p>
+
+        <br>
+
+        <p>If we don't have access to $p(x)$, then we want a gradient that does not depend on $t$, or equivalently, $\frac{f\p{t}}{t} - f'\p{t} = c$. According to this <a href="https://www.symbolab.com/solver/step-by-step/%5Cfrac%7Bf%5Cleft(x%5Cright)%7D%7Bx%7D-f%20'%5Cleft(x%5Cright)%3Dc?or=input">Symbolab chat</a>, the only valid choice of $f$ is $t\ln(t)$ (up to constants). Therefore, only forward KL can use log-gradients without depending on $p$.</p>
+
+        <br>
+
+        <p></p>
+        
+
+        <!-- <h3>Conclusion</h3>
+
+        <p>Data augmentation is a powerful tool for leveraging invariances in data unknown to the training process. Hopefully, we can make it more scalable by leveraging structure in the augmentation distribution, like we can for permutation invariance. Thank you for reading, and feel free to reach out with any questions or thoughts!</p>         -->
+
+        <script type="text/javascript" src="../js/post.js"></script>
+    </div>
+</body>
+
+</html>
+
+
+<!-- publish link: http://www.andrew.cmu.edu/server/publish.html -->
