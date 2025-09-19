@@ -267,7 +267,7 @@
             \end{aligned}
         </p>
 
-        <p>where $Z = \int_{\tau} \piref(\tau) \exp\left(\frac{R(\tau)}{\beta}\right) d\tau$ is the partition function, making this a valid distribution (proof in Appendix TODO). $\beta\log Z$ is also called the soft-value function, quantifying the expected reward from generating with the current policy. This means that the optimal policy satisfies</p>
+        <p>where $Z = \int_{\tau} \piref(\tau) \exp\left(\frac{R(\tau)}{\beta}\right) d\tau$ is the partition function, making this a valid distribution. $\beta\log Z$ is also called the soft-value function, quantifying the expected reward from generating with the current policy. This means that the optimal policy satisfies</p>
 
         <p class="math">
             \begin{aligned}
@@ -317,13 +317,17 @@
 
         <p>Unfortunately, this did not work in the toy setting of interest. </p>
 
-        <h4>Potential idea: Robust mean estimaton for the gradient</h4>
+        <!-- <h4>Potential idea: Robust mean estimaton for the gradient</h4>
 
-        <p>TODO MAYBE, doesn't work</p>
+        <p>TODO MAYBE, doesn't work</p> -->
 
-        <h4>Potential idea: KL regularization with a reference policy</h4>
+        <!-- <h4>Potential idea: KL regularization with a reference policy</h4>
 
-        <p>TODO, reduces variances but also leads to the wrong loss minimizer. Maybe okay with multiple iterations.</p>
+        <p>TODO, reduces variances but also leads to the wrong loss minimizer. Maybe okay with multiple iterations.</p> -->
+
+        <br>
+
+        <p>There are more, I'll add them later.</p>
 
         <h3>Appendix</h3>
 
@@ -385,7 +389,7 @@
 
         <br>
 
-        <p>Note that both of these estimators require sampling from the reference policy. To make these principled, need to apply importance sampling, TODO but that incurs high variance. TODO how to solve this?</p>
+        <p>Note that both of these estimators require sampling from the reference policy. To make these principled, need to apply importance sampling which I haven't seen people do since it would incur high variance. I'm unsure how to solve this.</p>
 
         <!-- <h3>Conclusion</h3>
 
