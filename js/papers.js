@@ -20,12 +20,12 @@ function renderPapers() {
     // make a list of papers
     let papers = [
         generatePaperHTML(
-            "Understanding Catastrophic Forgetting in Language Models via Implicit Inference",
-            ["Suhas Kotha", "Jacob Mitchell Springer", "Aditi Raghunathan"],
-            "ICLR 2024",
-            "https://arxiv.org/abs/2309.10105",
-            "https://github.com/kothasuhas/understanding-forgetting",
-            true
+            "💜 Pre-training under infinite compute", 
+            ["Konwoo Kim<sup>∞</sup>", "Suhas Kotha<sup>∞</sup>", "Percy Liang", "Tatsunori Hashimoto"], 
+            "Preprint 2025", 
+            "https://arxiv.org/abs/2509.14786",
+            "https://github.com/marin-community/marin/tree/suhas/data-efficiency",
+            false
         ),
         generatePaperHTML(
             "Repetition Improves Language Model Embeddings", 
@@ -33,7 +33,7 @@ function renderPapers() {
             "ICLR 2025", 
             "https://arxiv.org/abs/2402.15449",
             "https://github.com/jakespringer/echo-embeddings",
-            true
+            false
         ),
         generatePaperHTML(
             "Jailbreaking is Best Solved by Definition",
@@ -49,6 +49,14 @@ function renderPapers() {
             "ICML 2024 (Oral Position)",
             "https://arxiv.org/abs/2403.04893",
             "NA",
+            false
+        ),
+        generatePaperHTML(
+            "Understanding Catastrophic Forgetting in Language Models via Implicit Inference",
+            ["Suhas Kotha", "Jacob Mitchell Springer", "Aditi Raghunathan"],
+            "ICLR 2024",
+            "https://arxiv.org/abs/2309.10105",
+            "https://github.com/kothasuhas/understanding-forgetting",
             false
         ),
         generatePaperHTML(
