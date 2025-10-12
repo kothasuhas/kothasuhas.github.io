@@ -94,7 +94,7 @@
             $$
         </p>
 
-        <p>Since the entropy of $p$ is independent of the model $q$ we are trying to learn, minimizing the cross-entropy with respect to the parameters of $q$ is equivalent to minimizing the forward KL divergence. The nature of forward KL minimization biases pre-trained models to be mass-covering and diverse relative to other divergences which are more mode-seeking.</p>
+        <p>Since the entropy of $p$ is independent of the model $q$ we are trying to learn, minimizing the cross-entropy with respect to the parameters of $q$ is equivalent to minimizing the forward KL divergence. The nature of minimizing forward KL biases pre-trained models to be mass-covering and diverse relative to other divergences which are more mode-seeking.</p>
 
         <br>
 
@@ -110,7 +110,7 @@
 
         <h3>Reinforcement learning as minimizing reverse KL</h3>
 
-        <p>Can we similarly interpret reinforcement learning as minimizing a divergence? At first, RL might seem quite different since we are hoping to maximize a reward, not match a distribution. However, we can actually represent this reward maximization as distribution matching. We start by formulating RL with KL minimization initialized from a model $q_0$ as maximizing the reward function</p>
+        <p>Can we similarly interpret reinforcement learning as minimizing a divergence? At first, RL might seem quite different since we are hoping to maximize a reward, not match a distribution. However, we can actually represent this reward maximization as distribution matching. We start by formulating RL with KL regularization initialized from a model $q_0$ as maximizing the reward function</p>
 
         <p class="math">
             $$J(q) = \Eof{x\sim q}{R(x)} - \beta \KL{q}{q_0}$$
@@ -131,7 +131,7 @@
             \end{aligned}
         </p>
 
-        <p>In this derivation, $q^*(x)$ is the base policy reweighted by the reward distribution and maximizes the objective ($Z_{q^*}$ is the normalizing constant that ensures $q^*(x)$ is a distribution). Since $\beta\log Z_{q^*}$ is independent of $q$, maximizing $J(q)$ is equivalent to minimizing $\KL{q}{q^*}$, which is the reverse KL divergence between our model $q$ and the optimal policy $q^*$. Therefore, we can interpret RL as reverse KL minimization against the ground truth distribution $p = q^*$.</p>
+        <p>In this derivation, $q^*(x)$ is the base policy reweighted by the reward distribution and maximizes the objective ($Z_{q^*}$ is the normalizing constant that ensures $q^*(x)$ is a distribution). Since $\beta\log Z_{q^*}$ is independent of $q$, maximizing $J(q)$ is equivalent to minimizing $\KL{q}{q^*}$, which is the reverse KL divergence between our model $q$ and the optimal policy $q^*$. Therefore, we can interpret RL as minimizing reverse KL against the ground truth distribution $p = q^*$.</p>
 
         <br>
             
@@ -147,9 +147,9 @@
 
         <h3>Can both paradigms help each other?</h3>
 
-        <p>Though pre-training and RL naturally correspond to their own divergences, are there ways in which they can benefit from the other paradigm? We'll cover how RL already benefits from forward KL minimization and how pre-training doesn't seem to benefit from reverse KL minimization. </p>
+        <p>Though pre-training and RL naturally correspond to their own divergences, are there ways in which they can benefit from the other paradigm? We'll cover how RL already benefits from minimizing forward KL and how pre-training doesn't seem to benefit from minimizing reverse KL. </p>
 
-        <h4>RL relies on forward KL minimization</h4>
+        <h4>RL relies on minimizing forward KL</h4>
 
         <p>Though RL minimizes reverse KL, the initialization for RL is generally produced through minimizing forward KL. One weak sense in which this is true is that pre-training precedes RL; however, this is confounded with transfer learning because the target distribution $p$ for pre-training is not the same as the $p$ for RL.</p>
 
@@ -161,9 +161,9 @@
 
         <p>Why would forward KL matter for RL? To punt this question further upstream, it is typical for sample complexities in RL to be written in terms of quantities such as forward KL or coverage. For example, in Thompson Sampling, the number of samples it requires to achieve $\epsilon$ error is a function of $\KL{p}{q}$, not $\KL{q}{p}$ (<cite><a href="https://web.stanford.edu/~bvr/pubs/TS_Tutorial.pdf">Russo et al Tutorial</a>, 8.1</cite>). Furthermore, other papers show that coverage as a metric may be more predictive of post-training performance relative to forward KL (<cite><a href="https://openreview.net/pdf?id=AUXvYQlQLZ">Chen et al, 2025</a></cite>). Intuitively, it is important that the initial policy has sufficient coverage so that it has a chance of generating the correct answer. Since forward KL encourages mass-covering behavior, it is more helpful for RL compared to solutions from minimizing reverse KL that induce mode collapse.</p>
 
-        <h4>Pre-training doesn't use reverse KL minimization</h4>
+        <h4>Pre-training doesn't benefit from minimizing reverse KL?</h4>
 
-        <p>To my knowledge, there aren't many successes of using reverse KL minimization during pre-training. When Konwoo and I inadvertently used reverse KL minimization instead of forward KL in some early experiments, we found that models would rapidly mode collapse. This was visible not only in the metrics (where the model has lower reverse KL and higher forward FKL) but also in the generations, which all looked much more similar to each other than our forward KL models. It would be interesting if there were opportunities for reverse KL or sampling from the student more broadly to improve pre-training, beyond the recent wave of works on adding Chain of Thought and Quiet-STaR style objectives <cite>(<a href="https://arxiv.org/abs/2403.09629">Zelikman et al, 2022</a>)</cite> to improve pre-training. </p>
+        <p>To my knowledge, there aren't many successes of minimizing reverse KL for pre-training. When Konwoo and I inadvertently minimized reverse KL instead of forward KL in some early experiments, we found that models would rapidly mode collapse. This was visible not only in the metrics (where the model has lower reverse KL and higher forward FKL) but also in the generations, which all looked much more similar to each other than our forward KL models. It would be interesting if there were opportunities for reverse KL or sampling from the student more broadly to improve pre-training, beyond the recent wave of works on adding Chain of Thought and Quiet-STaR style objectives <cite>(<a href="https://arxiv.org/abs/2403.09629">Zelikman et al, 2022</a>)</cite> to improve pre-training. </p>
 
         <h3>Conclusion</h3>
 
