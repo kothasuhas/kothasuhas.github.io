@@ -281,7 +281,7 @@
         <p>The above derivation shows how maximizing the reward in RL corresponds to minimizing the reverse KL divergence with a specific target distribution $\targetRL$ (since $\partition_{\targetRL}$ is a constant). This target distribution is the same as our standard sampling target $\target$ if we set $\potential(\sT) = e^{\beta r(\sT)}$! Though RL and TSMC have the same minimizer, they go for this with two different divergences: TSMC aims to minimize forward KL whereas RL aims to minimize reverse KL. Forward KL corresponds to covering the mass of the data distribution since you need to give nonzero likelihood to all samples. On the other hand, reverse KL encourages mode seeking behavior since you only care about the likelihood of samples generated under your own policies. This idea shows up a lot in generative modeling, with the following intuitive picture (Figure 1).</p>
 
         <figure>
-            <img src="../images/tsmc/kls.png" style="height: 200px;">
+            <img src="../images/tsmc/kls.png" style="width: 80%;">
             <figcaption>Figure 1: Even though the minimizers are the same, forward KL (TSMC) incentivizes mass-covering behavior whereas reverse KL (RL) incentivizes mode-seeking behavior. Taken from <cite><a href="https://arxiv.org/abs/2402.00856">Ji et al, 2025</a></cite> (I have not read the paper)</figcaption>
             </p>
         </figure>
