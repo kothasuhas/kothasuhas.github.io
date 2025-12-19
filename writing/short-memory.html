@@ -73,7 +73,7 @@
 
         <h3>Preliminaries</h3>
 
-        <p>We will start by introducing the metrics of interest as introduced by the original paper. The entropy of a random variable $X$ is $H(X) = \Eof{X}{-\log\Pof{X}}$. The mutual information between two random variables $X, Y$ is defined as $I(X;Y) = H(X) - H(X\given Y)$, or how much the entropy in $X$ decreases as a result of knowing $Y$ (i.e. $H(X)$ is 0 if the variables are independent and is $H(X)$ if $Y$ determines $X$).</p>
+        <p>The entropy of a random variable $X$ is $H(X) = \Eof{X}{-\log\Pof{X}}$. The mutual information between two random variables $X, Y$ is defined as $I(X;Y) = H(X) - H(X\given Y)$, or how much the entropy in $X$ decreases as a result of knowing $Y$ (i.e. $H(X)$ is 0 if the variables are independent and is $H(X)$ if $Y$ determines $X$).</p>
 
         <br>
 
@@ -82,10 +82,10 @@
         <p class="math">
             \begin{aligned}
             & I(X;Y) \\
-            &= \Eof{X}{-\log\Pof{X}} - \Eof{X,Y}{-\log\Pof{X\given Y}} \\
+            &= \Eof{X,Y}{-\log\Pof{X}} - \Eof{X,Y}{-\log\Pof{X\given Y}} \\
             &= \Eof{X,Y}{\log\frac{\Pof{X\given Y}}{\Pof{X}}} \\
             &= \Eof{X,Y}{\log\frac{\Pof{Y\given X}}{\Pof{Y}}} \\
-            &= \Eof{Y}{-\log\Pof{Y}} - \Eof{X,Y}{-\log\Pof{Y\given X}} \\
+            &= \Eof{X,Y}{-\log\Pof{Y}} - \Eof{X,Y}{-\log\Pof{Y\given X}} \\
             &= I(Y;X)
             \end{aligned}
         </p>
@@ -99,7 +99,7 @@
         <p>We also note we can generalize this definition of mutual information by conditoning on a random variable $Z$, giving. </p>
 
         <p class="math">
-            $$I(X ; Y \given Z) = \Eof{Y}{\KL{\Pof{X\given Y,Z}}{\Pof{X \given Z}}}$$
+            $$I(X ; Y \given Z) = \Eof{Y,Z}{\KL{\Pof{X\given Y,Z}}{\Pof{X \given Z}}}$$
         </p>
 
         <p>We define the mutual information between the future and the past observations $\{x_t\}$ from the model $\mathcal{M}$ by averaging over every time step we make a prediction. After defining $x_i^j$ as \(x_i, \ldots, x_j\), the mutual information is defined as</p>
@@ -111,7 +111,7 @@
         <p>It will be helpful later to observe that mutual information has a chain rule which can be derived from auto-regressively decomposing the future predictions.</p>
 
         <p class="math">
-            $$\Pof{x_t \given x^{t-1}_{-\infty}} = \prod_{i\in[t,\infty]} \Pof{x_i \given x^{i-1}_t, x^{t-1}_{-\infty}} \\ \Longrightarrow \\ I(x_t ; x^{t-1}_{-\infty}) = \sum_{i\in[t,\infty]} I(x_i ; x^{t-1}_{-\infty} \given x^{i-1}_t)$$
+            $$\Pof{x_t^{\infty} \given x^{t-1}_{-\infty}} = \prod_{i\in[t,\infty]} \Pof{x_i^{\infty} \given x^{t-1}_{-\infty}, x^{i-1}_t} \\ \Longrightarrow \\ I(x_t^{\infty} ; x^{t-1}_{-\infty}) = \sum_{i\in[t,\infty]} I(x_i^{\infty} ; x^{t-1}_{-\infty} \given x^{i-1}_t)$$
         </p>
 
         <h3>Comparing short memory and the oracle</h3>
@@ -132,7 +132,7 @@
             $$\delta_{\tau}^{(t)} = I(x_t ; x^{\tau-1}_{-\infty} \given x^{t-1}_{\tau})$$
         </p>
         
-        <p>This can be seen from the earlier definition of conditional mutual information with the future $X = x_t$, far past $Y = x_{-\infty}^{\tau-1}$, and recent past $Z = x^{t-1}_{\tau}$. This quantity can be read as "how much extra information does the far past contain about the future, already given the recent past". This quantifies one of the most important intuitions of the paper that incorrectly predicting one future observation contains a lot of information about the past.</p>
+        <p>This can be seen from the earlier definition of conditional mutual information with the future $X = x_t$, far past $Y = x_{-\infty}^{\tau-1}$, and recent past $Z = x^{t-1}_{\tau}$, and can be read as "how much additional information does the far past contain about the future". This quantifies one of the most important intuitions of the paper that difficult predictions contain a lot of information about the past.</p>
 
         <br>
 
@@ -162,7 +162,7 @@
         
         <h3>Conclusion</h3>
 
-        <p> The above proof uses rather simple identities to bound the error of prediction with a short memory as $\mathcal{O}\p{\frac{1}{\ell}}$. For me, this empirically lines up with some observations that the loss decreases at this reciprocal rate both for context length at training and inference. I really love the simplicity of this result, both in problem statement and proof. The full paper contains more results with concrete rates and lower bounds for HMM's, which may be more intuitive for others. Thank you for reading, and feel free to reach out with any questions or thoughts!</p>
+        <p> The above proof uses rather simple identities to bound the error of prediction with a short memory as $\mathcal{O}\p{\frac{1}{\ell}}$. For me, this empirically lines up with some observations that the loss decreases at this reciprocal rate for context length at both training and inference. I really love the simplicity of this result, both in problem statement and proof. The full paper contains more results with concrete rates and lower bounds for HMM's, which may be more intuitive for others. Thank you for reading, and feel free to reach out with any questions or thoughts!</p>
 
         <p></p>
         
