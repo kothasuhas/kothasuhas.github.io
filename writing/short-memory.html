@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en" id="html">
+
+<head>
+    <meta charset="utf-8">
+    <title>Suhas Kotha</title>
+    <!-- <script src="jquery-3.6.3.min.js"></script> -->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script type="text/x-mathjax-config">
+        MathJax.Hub.Config({
+          tex2jax: {
+            inlineMath: [['$', '$'], ['\\(', '\\)']],
+            displayMath: [['$$', '$$'], ['\\[', '\\]']],
+            processEscapes: true
+          },
+          TeX: {
+            extensions: ["AMSmath.js", "AMSsymbols.js"],
+            equationNumbers: { autoNumber: "AMS" }
+          },
+        });
+    </script>
+    <script type="text/javascript" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS_CHTML"></script>
+    </script>
+    <meta name="description" content="Prediction with a Short Memory">
+    <meta name="author" content="Suhas Kotha">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href='https://fonts.googleapis.com/css?family=Quicksand' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" href="../css/style.css?v=<?php echo rand(); ?>">
+    <link rel="icon" type="image/png" href="../images/dragon_logo.png">
+    <style id="autogen"></style>
+</head>
+
+<body style="max-width: 100%; margin: 0 auto;">
+    <p><a href=../index.html>Home</a></p>
+    <div class="blog-post">
+        <br>
+
+        <h1>Prediction with a Short Memory</h1>
+
+        \(
+        \def\R{\mathbb{R}}
+        \def\model{q_\theta}
+        \newcommand{\fd}[2]{D_f(#1 \; \| \; #2)}
+        \newcommand{\Pof}[1]{P\left(#1\right)}
+        \newcommand{\Eof}[2]{\mathbb{E}_{#1}\left[#2\right]}
+        \newcommand{\p}[1]{\left(#1\right)}
+        \newcommand{\b}[1]{\left[#1\right]}
+        \newcommand{\br}[1]{\left\{#1\right\}}
+        \newcommand{\KL}[2]{D_{\text{KL}}\p{#1\;||\;#2}}
+        \newcommand{\CE}[2]{\text{H}\p{#1, #2}}
+        \newcommand{\H}[1]{\text{H}\p{#1}}
+        \def\given{\;|\;}
+        \)
+
+        <br>
+        <p style="text-align: center;">12/18/2025</p>
+        <br>
+
+        <!-- 
+        Task: sequential prediction
+        Surprising result, you only need to look at the last l tokens to perform well. Specifically, you can bound error by I/l
+        We will only go over the simplest mutual information proof that conveys the most intuition, we leave the HMM results and lower bounds for the paper
+
+        Couple of interpretations
+        - don't need context to be that long, but as u make context longer, u expect 1/l scaling. this is empirically consistent with some experiments i've done before
+        -->
+
+        <p>Prediction with a short memory <cite><a href="https://arxiv.org/abs/1612.02526">(Sharan et al, 2025)</a></cite> considers the simple problem of predicting the next observation $x_t$ given a sequence of past observations $x_{0}, x_1, \ldots, x_{t-1}$. Given such an underlying sequence drawn from an unknown distribution, it might seem hard to match the oracle algorithm which can predict the true distribution of $x_t$ conditioned on the full past. This paper makes the surprising observation that a predictor that only looks at the $\ell$ most recent tokens can achieve "low" error. Specifically, if the mutual information between the future and past is on average $I$, the optimal predictor conditioned on the $\ell$ most recent observations has KL error bounded by $I/\ell$ (alternatively, achieving $\epsilon$ error only requires looking at the last $I/\epsilon$ observations).</p>
+
+        <br>
+
+        <p>The paper does a thorough job of characterizing this result with more specific results for HMMs, computational/statistical lower bounds, etc. This blog post will share a very simple proof given in Sections 3 and 4 that I personally found more illuminating and general. We will walk through a subset of the analysis in these sections.</p>
+
+        <h3>Preliminaries</h3>
+
+        <p>We will start by introducing the metrics of interest as introduced by the original paper. The entropy of a random variable $X$ is $H(X) = \Eof{X}{-\log\Pof{X}}$. The mutual information between two random variables $X, Y$ is defined as $I(X;Y) = H(X) - H(X\given Y)$, or how much the entropy in $X$ decreases as a result of knowing $Y$ (i.e. $H(X)$ is 0 if the variables are independent and is $H(X)$ if $Y$ determines $X$).</p>
+
+        <br>
+
+        <p>We first observe that the mutual information is symmetric</p>
+
+        <p class="math">
+            \begin{aligned}
+            & I(X;Y) \\
+            &= \Eof{X}{-\log\Pof{X}} - \Eof{X,Y}{-\log\Pof{X\given Y}} \\
+            &= \Eof{X,Y}{\log\frac{\Pof{X\given Y}}{\Pof{X}}} \\
+            &= \Eof{X,Y}{\log\frac{\Pof{Y\given X}}{\Pof{Y}}} \\
+            &= \Eof{Y}{-\log\Pof{Y}} - \Eof{X,Y}{-\log\Pof{Y\given X}} \\
+            &= I(Y;X)
+            \end{aligned}
+        </p>
+
+        <p>In the above derivation, note that simplifying $\Eof{X,Y}{\log\frac{\Pof{X\given Y}}{\Pof{X}}}$ yields</p>
+
+        <p class="math">
+            $$I(X ; Y) = \Eof{Y}{\KL{\Pof{X\given Y}}{\Pof{X}}}$$
+        </p>
+            
+        <p>We also note we can generalize this definition of mutual information by conditoning on a random variable $Z$, giving. </p>
+
+        <p class="math">
+            $$I(X ; Y \given Z) = \Eof{Y}{\KL{\Pof{X\given Y,Z}}{\Pof{X \given Z}}}$$
+        </p>
+
+        <p>We define the mutual information between the future and the past observations $\{x_t\}$ from the model $\mathcal{M}$ by averaging over every time step we make a prediction. After defining $x_i^j$ as \(x_i, \ldots, x_j\), the mutual information is defined as</p>
+
+        <p class="math">
+            $$I(\mathcal{M}) = \lim_{T\to\infty} \frac{1}{T} \sum_{t\in[0,T-1]} I(x^{\infty}_t ; x^{t-1}_{-\infty})$$
+        </p>
+
+        <p>It will be helpful later to observe that mutual information has a chain rule which can be derived from auto-regressively decomposing the future predictions.</p>
+
+        <p class="math">
+            $$\Pof{x_t \given x^{t-1}_{-\infty}} = \prod_{i\in[t,\infty]} \Pof{x_i \given x^{i-1}_t, x^{t-1}_{-\infty}} \\ \Longrightarrow \\ I(x_t ; x^{t-1}_{-\infty}) = \sum_{i\in[t,\infty]} I(x_i ; x^{t-1}_{-\infty} \given x^{i-1}_t)$$
+        </p>
+
+        <h3>Comparing short memory and the oracle</h3>
+
+        <p>In this section, we will analyze the error of the optimal algorithm that predicts the observations indexed $[\tau, \tau + \ell - 1]$ given no prior history. Note that this is strictly more difficult than always having $\ell$ past observations. Since I train language models, this feels familiar to me as "concatenate all documents and chunk into independent length $\ell$ windows".</p>
+
+        <br>
+
+        <p>We will compare this short memory algorithm with the oracle algorithm that observes the full history. For time $t \in [\tau, \tau + \ell - 1]$, we will define the gap between the short and long memory algorithms as </p>
+
+        <p class="math">
+            $$\delta_{\tau}^{(t)} = \Eof{x_{-\infty}^{t-1}}{\KL{\Pof{x_t \given x^{t-1}_{-\infty}}}{\Pof{x_t \given x^{t-1}_{\tau}}}}$$
+        </p>
+
+        <p>where our goal is to bound $\frac{1}{\ell}\sum_{t\in[\tau, \tau + \ell - 1]} \delta_{\tau}^{(t)}$. Note that under this definition, the error directly simplifies to</p>
+
+        <p class="math">
+            $$\delta_{\tau}^{(t)} = I(x_t ; x^{\tau-1}_{-\infty} \given x^{t-1}_{\tau})$$
+        </p>
+        
+        <p>This can be seen from the earlier definition of conditional mutual information with the future $X = x_t$, far past $Y = x_{-\infty}^{\tau-1}$, and recent past $Z = x^{t-1}_{\tau}$. This quantity can be read as "how much extra information does the far past contain about the future, already given the recent past". This quantifies one of the most important intuitions of the paper that incorrectly predicting one future observation contains a lot of information about the past.</p>
+
+        <br>
+
+        <p>Given this equivalence between error and mutual information, we can bound the average error of the window by the error of the slightly harder task of predicting the entire future from $x_{-\infty}^{\tau-1}$. We now put all of the above steps together.</p>
+
+        <p class="math">
+            \begin{aligned}
+            & \frac{1}{\ell}\sum_{t\in[\tau,\tau+\ell-1]} \delta_{\tau}^{(t)} && \text{[average error of window]} \\
+            = & \frac{1}{\ell}\sum_{t\in[\tau,\tau+\ell-1]} I(x_t ; x^{\tau-1}_{-\infty} \given x^{t-1}_{\tau}) && \text{[error is mutual info]} \\
+            \leq & \frac{1}{\ell}\sum_{t\in[\tau,\infty]} I(x_t ; x^{\tau-1}_{-\infty} \given x^{t-1}_{\tau}) && \text{[harder to predict full future]} \\
+            = & \frac{1}{\ell} I(x_\tau^{\infty} ; x^{\tau-1}_{-\infty}) && \text{[chain rule]} \\
+            \end{aligned}
+        </p>
+
+        <p>Woohoo, we have now related the average prediction error of the short memory predictor over a window to the full mutual information between the future and past at time $\tau$! To finish the proof, to predict $x_t$, we can average over predictors chunked at $\tau \in [t-\ell+1, t]$. This results in the average error being bounded by the full mutual information.</p>
+
+        <p class="math">
+            \begin{aligned}
+            &\lim_{T\to\infty} \frac{1}{T}\sum_{t\in[0,T-1]} \frac{1}{\ell}\sum_{\tau \in [t-\ell+1,t]} \delta^{(t)}_{\tau} && \text{[average error of chunked predictors]} \\
+            = &\lim_{T\to\infty} \frac{1}{T}\sum_{\tau\in[0,T-1]} \frac{1}{\ell}\sum_{t \in [\tau,\tau + \ell - 1]} \delta^{(t)}_{\tau} && \text{[re-indexing under limit]} \\
+            \leq &\lim_{T\to\infty} \frac{1}{T}\sum_{\tau\in[0,T-1]} \frac{1}{\ell} I(x_\tau^{\infty} ; x^{\tau-1}_{-\infty}) && \text{[earlier bound]} \\
+            = & \frac{1}{\ell} I(\mathcal{M}) && \text{[mutual info of model]} \\
+            \end{aligned}
+        </p>
+
+        <p>This completes the relationship between the difficulty of predicting with a short memory and the difficulty of predicting with the full history (i.e. the mutual information).</p>
+        
+        <h3>Conclusion</h3>
+
+        <p> The above proof uses rather simple identities to bound the error of prediction with a short memory as $\mathcal{O}\p{\frac{1}{\ell}}$. For me, this empirically lines up with some observations that the loss decreases at this reciprocal rate both for context length at training and inference. I really love the simplicity of this result, both in problem statement and proof. The full paper contains more results with concrete rates and lower bounds for HMM's, which may be more intuitive for others. Thank you for reading, and feel free to reach out with any questions or thoughts!</p>
+
+        <p></p>
+        
+
+        <!-- <h3>Conclusion</h3>
+
+        <p>Data augmentation is a powerful tool for leveraging invariances in data unknown to the training process. Hopefully, we can make it more scalable by leveraging structure in the augmentation distribution, like we can for permutation invariance. Thank you for reading, and feel free to reach out with any questions or thoughts!</p>         -->
+
+        <script type="text/javascript" src="../js/post.js"></script>
+    </div>
+</body>
+
+</html>
+
+
+<!-- publish link: http://www.andrew.cmu.edu/server/publish.html -->
