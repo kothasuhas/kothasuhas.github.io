@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en" id="html">
+
+<head>
+    <meta charset="utf-8">
+    <title>Suhas Kotha</title>
+    <!-- <script src="jquery-3.6.3.min.js"></script> -->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script type="text/x-mathjax-config">
+        MathJax.Hub.Config({
+          tex2jax: {
+            inlineMath: [['$', '$'], ['\\(', '\\)']],
+            displayMath: [['$$', '$$'], ['\\[', '\\]']],
+            processEscapes: true
+          },
+          TeX: {
+            extensions: ["AMSmath.js", "AMSsymbols.js"],
+            equationNumbers: { autoNumber: "AMS" }
+          },
+        });
+    </script>
+    <script type="text/javascript" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS_CHTML"></script>
+    </script>
+    <meta name="description" content="Algorithmic Information Theory (Interestingness Part 1)">
+    <meta name="author" content="Suhas Kotha">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href='https://fonts.googleapis.com/css?family=Quicksand' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" href="../css/style.css?v=<?php echo rand(); ?>">
+    <link rel="icon" type="image/png" href="../images/dragon_logo.png">
+    <style id="autogen"></style>
+</head>
+
+<body style="max-width: 100%; margin: 0 auto;">
+    <p><a href=../index.html>Home</a></p>
+    <div class="blog-post">
+        <br>
+
+        <h1>Algorithmic Information Theory (Interestingness Part 1)</h1>
+
+        \(
+        \def\R{\mathbb{R}}
+        \def\model{q_\theta}
+        \newcommand{\fd}[2]{D_f(#1 \; \| \; #2)}
+        \newcommand{\Eof}[2]{\mathbb{E}_{#1}\left[#2\right]}
+        \newcommand{\p}[1]{\left(#1\right)}
+        \newcommand{\b}[1]{\left[#1\right]}
+        \newcommand{\br}[1]{\left\{#1\right\}}
+        \newcommand{\KL}[2]{D_{\text{KL}}\p{#1\;||\;#2}}
+        \newcommand{\CE}[2]{\text{H}\p{#1, #2}}
+        \newcommand{\H}[1]{\text{H}\p{#1}}
+        \newcommand{\kde}[1]{\hat{p}_n(#1)}
+        \newcommand{\MSE}{\text{MSE}}
+        \def\given{\;|\;}
+        \)
+
+        <br>
+        <p style="text-align: center;">1/22/2025, IN PROGRESS</p>
+        <br>
+
+        <p>How do you quantify the amount of information in a distribution? There are two classical attempts: random information, as quantified by Shannon's information theory, and structural information, as quantified by Kolmogorov's complexity theory. For example, the uniform distribution has high entropy (i.e. high random information) and low Kolmogorov complexity (i.e. low structural information). In this post, we will connect both perspectives under Algorithmic Information Theory and discuss their merits/pitfalls. The introductory material in this post closely follows exposition from <cite><a href="https://link.springer.com/book/10.1007/978-0-387-49820-1">Li and Vitanyi, 2008</a></cite>, <cite><a href="https://arxiv.org/abs/1405.6903">Aaronson et al, 2014</a></cite>, and <cite><a href="https://arxiv.org/abs/2601.03220">Finzi et al, 2026</a></cite> and is intended to provide exposition for our treatment of epiplexity (<cite><a href="https://arxiv.org/abs/2601.03220">Finzi et al, 2026</a></cite>) in Interestingness Part 2 (TODO).</p>
+
+        <br>
+
+        <h3>Information theory</h3>
+
+        <h4>Entropy</h4>
+
+        <p>Given a probability distribution $P$ over bitstrings $x$, the (Shannon) entropy is defined as</p>
+
+        <p class="math">
+          $$H(P) = \Eof{x\sim P}{-\log P(x)}$$
+        </p>
+
+        <p>The entropy quantifies randomness and prediction difficulty inherent to a distribution. For example, the lowest cross-entropy error a generative model can achieve is the entropy of the ground-truth distribution (cross-entropy $H(P,Q)$ is $\KL{P}{Q} + H(P)$, and KL is non-negative). </p>
+
+        <h4>Compression</h4>
+          
+        <p>Suppose our goal was to compress bitstrings from the distribution by mapping them to a unique bitstring (a motivating example is to communicate these bits across a channel). When constructing such a <a href="https://www.wikiwand.com/en/articles/Variable-length_code#Uniquely_decodable_codes">uniquely decodable code</a>, we would presumably assign shorter bitstrings to the frequent samples. <a href="https://www.wikiwand.com/en/articles/Shannon%27s_source_coding_theorem">Shannon's source coding theorem</a> states that the expected codelength of any such code is lower-bounded by the entropy. Furthermore, there exists a code $f$ such that the expected codelength is upper-bounded by the entropy plus one. Furthermore, the optimal encoding $f$ satisfies</p>
+
+        <p class="math">
+          $$H(P) \leq \Eof{x\sim P}{|f(x)|} \leq H(P) + 1$$
+        </p>
+
+        <p>TODO PROOF. If we did not want to appeal to Kraft's inequality, we could directly use <a href="https://www.wikiwand.com/en/articles/Shannon%E2%80%93Fano_coding">Shannon-Fano codings</a> to achieve the upper bound. In any case, this result shows that the entropy is directly connected to the complexity of compressing all of the samples from the distribution.</p>
+
+        <h3>Complexity</h3>
+
+        <h4>Sample level complexity</h4>
+
+        <p>The Kolmogorov complexity of a string $x$ is the length of the shortest program under a fixed Turing machine that produces the string, denoted $K(x)$.</p>
+
+        <br>
+
+        <p>One might be concerned that the specific implementation of the Turing machine may affect the Kolmogorov complexity. Interestingly, choosing between universal Turing machines $T_1$ and $T_2$ only affects the Kolmogorov complexity up to a constant that depends on $T_1, T_2$. This is because it is possible to implement a transpiler that translates programs from $T_1$ into $T_2$. Therefore, if there was a substantially shorter program in $T_1$, one could simulate it in $T_2$ after implementing the transpiler in constant bits. Going forward, we will always operate under an arbitrary such Turing machine $U$.</p>
+
+        <h4>Distributional complexity</h4>
+
+        <p>TODO DEFINE FOR PROBABILITY DISTS, CODE SAMPLES</p>
+
+        <h4>Kolmogorov at sample level is effectively entropy</h4>
+
+        <p>The previous subsection defines Kolmogorov complexity at the distribution level. It is important that we do not apply this definition to the sample level since the expected complexity of a random string is close to the entropy of the generating distribution. More formally, for distribution $P$ we have that </p>
+
+        <p class="math">
+          $$H(P) \leq \Eof{x\sim P}{K(x)} \leq H(P) + K(P) + O(1)$$
+        </p>
+
+        <p>For the lower bound, note that the code given by the shortest program witnessing each Kolmogorov complexity would contradict the entropy lower bound from Shannon's source coding theorem. For the upper bound, note that one possible way to encode $x$ is to first encode the probability distribution and then encode $x$ as a sample of the distribution. This gives $K(x) \leq K(P) - \log P(x) + O(1)$. Taking the expectation of both sides over $x \sim P$ gives the bound.</p>
+
+        <h4>Complexity for samples? (sophistication)</h4>
+
+        <p>The above analysis reveals that Kolmogorov complexity fails to quantify complexity at a sample level; for example, the uniform distribution has high entropy and thus high expected per sample complexity but the uniform distribution does not intuitively have structural complexity. There have been many attempts to satisfyingly quantify complexity for samples, the most representative attempt being (coarsened) (naive) sophistication. In Appendix A (TODO CITE), we detail (coarse) (naive) sophistication and show its shortcomings. This analysis will be more relevant to part 2 where we introduce compute-bounded notions such as time-bounded Kolmogorov complexity, logical depth, and epiplexity. </p>
+
+
+        <h3>Model selection via minimum description length</h3>
+
+        <p>So far, we have kept the notions of structural and random information completely seperate of each other. However, when selecting models according to data (i.e. learning), we are interested in balancing both. This classical idea of Occam's razor (selecting the simplest hypothesis that explains the data) is formalized under the Minimum Description Length principle for two-part codes. More formally, for data $x$ and candidate programs $\mathcal{H}$, the minimum description length is</p>
+
+        <p class="math">
+          $$L(x) = \min_{h\in\mathcal{H}} |h| - \Eof{x\sim P}{\log P_h(x)}$$
+        </p>
+
+        <p>We can further decompose the MDL into its structural component (the value of $|h|$ at the minimizer) and random component (the negative log likelihood at the minimizer). This would be equivalent to Kolmogorov complexity if we dropped the right term and entropy if we dropped the left term. This subtle difference will become much more relevant when we introduce computational constraints in Part 2.</p>
+
+        <h3>Conclusion</h3>
+
+        <p>Hopefully the above posts offers a simple theoretical framework for quantifying structural and random information. However, such notions still feels inadequate: pseudo-random number generators should intuitively have high random information, and math should intuitively have high structural information, but our current notions would give low structural and random information to both. In the next post, we will show how epiplexity <cite><a href="https://arxiv.org/abs/2601.03220">(Finzi et al, 2026)</a></cite> can potentially resolve such concerns with compute constraints. Thank you for reading, and feel free to reach out with any questions or thoughts!</p>
+
+        <h3>Appendix A: Sophistication</h3>
+
+        <p>To separate the random information from the structural information within a string, naive sophistication aims to quantify the complexity of defining a typical set. For a sample $x$, a typical set $S$ satisifies $K(x \given S) \geq \log |S| - c$ (the shortest description of $x$ is as a random element of $S$ up t a constant threshold $c$). Naive c-sophistication ($\text{nsoph}_c(x)$) is the minimum of $K(S)$ over all typical sets for $x$ TODO CITE. To remove the sensitivity to $c$, we can take coarsened naive c-sophistication as $\text{cnsoph}_c(x) = \min_c \{c + \text{nsoph}_c(x)\}$. The naive sophistication is at worst $K(x) + O(1)$ which can is witnessed by $S = \{x\}$. We have already shown that most strings have high Kolmogorov complexity; such strings are low sophistication because we can take $S$ to be the set of all bit strings.</p>
+
+        <br>
+
+        <p>Naive sophistication actually comes from the more classical notion of sophistication ($\text{soph}_c(x)$) which adds the additional constraint that $S$ must give a near-optimal encoding of $x$, or $K(S) + \log_2|S| - c \leq K(x)$. We refer to this as a two-part code since we are encoding $x$ via $S$, and in the next section we will see a distribution level two-part code. Since $K(x) \leq K(x\given S) + K(S)$, the optimality of the two-part code $S$ implies that $S$ is a typical set. Interestingly, sophistication and naive sophistication (coarse or not coarse) are known to be quite close TODO CITE.</p>
+
+        <p class="math">
+          $$\text{nsoph}_{c}(x) \leq \text{soph}_{c+O(\log n)}(x) \leq \text{nsoph}_{c}(x)$$
+          $$\text{ncsoph}(x) \leq \text{csoph}(x) \leq \text{ncsoph}(x) + O(\log n)$$
+        </p>
+
+        <p>Knowing that all these metrics are equivalent, does naive sophistication capture what we're looking for? Unfortunately, it is quite a sad story. The only existence proof of sophisticated strings uses a non-constructive diagonalization argument. Even optimizing for sophistication seems like a lost hope since it is bi-level over $x$ and $S$. The situation is even more dire because Chaitin's incompleteness theorem states that it is impossible to provide a proof that any given string over a length $L$ is sophisticated (TODO: UNDERSTAND). We face much less resistance when defining such notions distributionally. </p>
+
+        <br>
+
+        <script type="text/javascript" src="../js/post.js"></script>
+    </div>
+</body>
+
+</html>
+
+
+<!-- publish link: http://www.andrew.cmu.edu/server/publish.html -->
