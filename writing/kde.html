@@ -68,7 +68,7 @@
             </p>
         </figure>
 
-        <p>In the context of nonparametric statistics, one of the simplest generative modeling algorithms is Kernel Density Estimation (KDE), which estimates the data generating process as a mixture of kernel distributions centered around each data point. Interestingly, the choice of kernel does <b>not</b> strongly affect the exponent of the data scaling rate and only affects the constant factor. This is interesting since it implies our empirical results, and this post will show a classic bound on the asymptotic data efficiency of KDE, closely following the exposition in <a href="https://www.personal.soton.ac.uk/cz1y20/Reading_Group/mlts-2023w/Tsybakov_Nonparametric_Estimation.pdf"><cite>Tysbakov et al, 2003</cite></a> and the motivation in <a href="https://arxiv.org/abs/2102.06701"><cite>Bahri et al, 2021</cite></a> and <a href="https://arxiv.org/abs/1905.10843"><cite>Spigler et al, 2019</cite></a>.</p>
+        <p>In the context of nonparametric statistics, one of the simplest generative modeling algorithms is Kernel Density Estimation (KDE), which estimates the data generating process as a mixture of kernels centered around each data point. Interestingly, the choice of kernel does <b>not</b> strongly affect the exponent of the data scaling rate and only affects the constant factor. This is interesting since it implies our empirical results, and this post will show a classic bound on the asymptotic data efficiency of KDE, closely following the exposition in <a href="https://www.personal.soton.ac.uk/cz1y20/Reading_Group/mlts-2023w/Tsybakov_Nonparametric_Estimation.pdf"><cite>Tysbakov et al, 2003</cite></a> and the motivation in <a href="https://arxiv.org/abs/2102.06701"><cite>Bahri et al, 2021</cite></a> and <a href="https://arxiv.org/abs/1905.10843"><cite>Spigler et al, 2019</cite></a>.</p>
 
         <h3>Algorithm</h3>
 
@@ -78,7 +78,7 @@
             $$\kde{x} = \frac{1}{nh} \sum_{i\in[n]} K\p{\frac{X_i - x}{h}}$$
         </p>
 
-        <p>for a choice of kernel function $K$ (integrating to $1$) and bandwidth parameter $h$. There are many choices for the kernel: common choices include a constant interval or a Gaussian. The bandwidth parameter $h$ controls whether the KDE sticks to the data or smooths out uncertainty. We will find that the optimal setting of this parameter depends on the amount of available data, decreasing as $n$ increases. </p>
+        <p>for a choice of kernel function $K$ (integrating to $1$ but potentially negative) and bandwidth parameter $h$. There are many choices for the kernel: common choices include a constant interval or a Gaussian. The bandwidth parameter $h$ controls whether the KDE sticks to the data or smooths out uncertainty. We will find that the optimal setting of this parameter depends on the amount of available data, decreasing as $n$ increases. </p>
 
         <h3>Bounding error</h3>
 
