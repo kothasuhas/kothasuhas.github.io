@@ -118,11 +118,7 @@
 
         <br>
 
-        <p>Upper bound: One short answer is that Kraft's inequality comes with a constructive analogue: if one chooses codelengths $l_i$ that satisfy $2^{-l_i} \leq 1$, then there is an algorithm that constructs a valid prefix code. Therefore, we can take the codelengths $l_i = \lceil-\log P(x)\rceil$ since this satisfies Kraft's inequality and has expectation bounded above by $H(P)+1$. Note that this choice intuitively coincides with our earlier lower bound where we interpret $2^{-|f(x)|}$ as the probability of an element.</p>
-
-        <br>
-
-        <p>TODO If we did not want to appeal to Kraft's inequality, we could directly use <a href="https://www.wikiwand.com/en/articles/Shannon%E2%80%93Fano_coding">Shannon-Fano codings</a> to achieve the upper bound. In any case, this result shows that the entropy is directly connected to the complexity of compressing all of the samples from the distribution.</p>
+        <p>Upper bound: Kraft's inequality comes with a constructive analogue: if one chooses codelengths $l_i$ that satisfy $2^{-l_i} \leq 1$, then there is an algorithm that constructs a valid prefix code. Therefore, we can take the codelengths $l_i = \lceil-\log P(x)\rceil$ since this satisfies Kraft's inequality and has expectation bounded above by $H(P)+1$. Note that this choice intuitively coincides with our earlier lower bound where we interpret $2^{-|f(x)|}$ as the probability of an element. If we did not want to appeal to Kraft's inequality, we could directly use <a href="https://www.wikiwand.com/en/articles/Shannon%E2%80%93Fano_coding">Shannon-Fano coding</a> to achieve the upper bound (proof left to the article).</p>
 
         <h3>Complexity</h3>
 
@@ -200,7 +196,7 @@
           $$\text{ncsoph}(x) \leq \text{csoph}(x) \leq \text{ncsoph}(x) + O(\log n)$$
         </p>
 
-        <p>Knowing that all these metrics are equivalent, does naive sophistication capture what we're looking for? Unfortunately, it is quite a sad story. The only existence proof of sophisticated strings uses a non-constructive diagonalization argument. Even optimizing for sophistication seems like a lost hope since it is bi-level over $x$ and $S$. The situation is even more dire because Chaitin's incompleteness theorem states that it is impossible to provide a proof that any given string over a length $L$ is sophisticated (TODO: understand this proof, saw it claimed in epiplexity). We face much less resistance when defining such notions distributionally. </p>
+        <p>Knowing that all these metrics are equivalent, does naive sophistication capture what we're looking for? Unfortunately, it is quite a sad story. The only existence proof of sophisticated strings uses a non-constructive diagonalization argument. Even optimizing for sophistication seems like a lost hope since it is bi-level over $x$ and $S$. The situation is even more dire because <a href="https://www.wikiwand.com/en/articles/Kolmogorov_complexity#Chaitin's_incompleteness_theorem">Chaitin's incompleteness theorem</a> states that it is impossible to provide a proof that any given string over a length $L$ is sophisticated. We face much less resistance when defining such notions distributionally. </p>
 
         <br>
 
