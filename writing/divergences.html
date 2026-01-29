@@ -159,7 +159,7 @@
 
         <br>
 
-        <p>Why would forward KL matter for RL? To punt this question further upstream, it is typical for sample complexities in RL to be written in terms of quantities such as forward KL or coverage. For example, in Thompson Sampling, the number of samples it requires to achieve $\epsilon$ error is a function of $\KL{p}{q}$, not $\KL{q}{p}$ (<cite><a href="https://web.stanford.edu/~bvr/pubs/TS_Tutorial.pdf">Russo et al Tutorial</a>, 8.1</cite>). Furthermore, other papers show that coverage as a metric may be more predictive of post-training performance relative to forward KL (<cite><a href="https://openreview.net/pdf?id=AUXvYQlQLZ">Chen et al, 2025</a></cite>). Intuitively, it is important that the initial policy has sufficient coverage so that it has a chance of generating the correct answer. Since forward KL encourages mass-covering behavior, it is more helpful for RL compared to solutions from minimizing reverse KL that induce mode collapse.</p>
+        <p>Why would forward KL matter for RL? To punt this question further upstream, it is typical for sample complexities in RL to be written in terms of quantities such as coverage which can be achieved by minimizing FKL (<cite><a href="https://openreview.net/pdf?id=AUXvYQlQLZ">Chen et al, 2025</a></cite>). Intuitively, it is important that the initial policy has sufficient coverage so that it has a chance of generating the correct answer. Since forward KL encourages mass-covering behavior, it is more helpful for RL compared to solutions from minimizing reverse KL that induce mode collapse.</p>
 
         <h4>Pre-training doesn't benefit from minimizing reverse KL?</h4>
 
