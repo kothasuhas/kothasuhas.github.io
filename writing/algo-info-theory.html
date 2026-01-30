@@ -57,7 +57,7 @@
         <p style="text-align: center;">1/22/2025</p>
         <br>
 
-        <p>How do you quantify the amount of information in a distribution? There are two classical attempts: random information, as quantified by Shannon's information theory, and structural information, as quantified by Kolmogorov's complexity theory. In this post, we will connect both perspectives under Algorithmic Information Theory and discuss their merits/pitfalls. The introductory material in this post closely follows exposition from <cite><a href="https://link.springer.com/book/10.1007/978-0-387-49820-1">Li and Vitanyi, 2008</a></cite> and is intended to provide exposition for our treatment of epiplexity (<cite><a href="https://arxiv.org/abs/2601.03220">Finzi et al, 2026</a></cite>) in Interestingness Part 2 (to be published).</p>
+        <p>How do you quantify the amount of information in a distribution? There are two classical attempts from Shannon's information theory and Kolmogorov's algorithmic complexity. In this post, we will connect both perspectives under Algorithmic Information Theory and discuss their merits/pitfalls. The introductory material in this post closely follows exposition from <cite><a href="https://link.springer.com/book/10.1007/978-0-387-49820-1">Li and Vitanyi, 2008</a></cite> and is intended to provide exposition for our treatment of epiplexity (<cite><a href="https://arxiv.org/abs/2601.03220">Finzi et al, 2026</a></cite>) in Interestingness Part 2 (blog to be published).</p>
 
         <br>
 
@@ -71,15 +71,15 @@
           $$H(P) = \Eof{x\sim P}{-\log P(x)}$$
         </p>
 
-        <p>The entropy quantifies randomness and prediction difficulty inherent to a distribution. For example, the lowest cross-entropy error a generative model can achieve is the entropy of the ground-truth distribution (cross-entropy $H(P,Q)$ is $\KL{P}{Q} + H(P)$, and KL is non-negative). </p>
+        <p>The entropy quantifies the randomness of a distribution via the difficulty of predicting a sample. For example, the lowest cross-entropy error a generative model $Q$ can achieve is the entropy of the ground-truth distribution (cross-entropy $H(P,Q)$ is $\KL{P}{Q} + H(P)$, and KL is non-negative). </p>
 
         <h4>Compression</h4>
           
-        <p>Suppose our goal was to compress bitstrings from the distribution $x$ into a unique bitstring $y=f(x)$. One motivating example is to communicate these bits across a channel where we would like to minimize the expected bits used to encode a bitstring drawn from $P$, or $\Eof{x\sim P}{|f(x)|}$. To facilitate communication across the channel, we will seek a <a href="https://www.wikiwand.com/en/articles/Prefix_code"> prefix code</a> $f$ such that no codeword $y$ is a prefix of another codeword. </p>
+        <p>Suppose our goal was to compress bitstrings $x$ drawn from $P$ into a unique bitstrings $y=f(x)$. One motivating example is to communicate $x$ across a channel using the least bits in expectation ($\Eof{x\sim P}{|f(x)|}$). For ease of communication, we will ask that $f$ is a <a href="https://www.wikiwand.com/en/articles/Prefix_code"> prefix code</a>: no codeword $y$ is a prefix of another codeword. </p>
 
         <br>
         
-        <p>Let's work through the example visualized in Figure 1. Suppose the original distribution has four long bitstrings with probabilities $\frac{1}{2}, \frac{1}{4}, \frac{1}{8}, \frac{1}{8}$. One possible prefix code is to assign a unique two bit identifier to each original string. This will take 2 bits to encode on expectation. To achieve higher compression, note that we can assign shorter codes to the frequent elements and longer codes The second prefix code is length $1$ for the most frequent element and length $3$ for the least frequent element. This achieves expected codelength $1.75$, which is an improvement over $2$.</p>
+        <p>Let's work through the example visualized in Figure 1. Suppose the original distribution has four long bitstrings with probabilities $\frac{1}{2}, \frac{1}{4}, \frac{1}{8}, \frac{1}{8}$. One possible prefix code is to assign a unique two bit identifier to each original string. This will take 2 bits to encode on expectation. To achieve higher compression, we can assign shorter codes to the frequent elements and longer codes to the rarer elements. The second prefix code assigns length $1$ to the most frequent element and length $3$ to the least frequent element. This achieves expected codelength $1.75$, which is an improvement over $2$.</p>
 
         <figure>
           <img src="../images/interestingness/prefix-code-example.png" style="width: 90%;">
@@ -87,13 +87,13 @@
           </p>
         </figure>
 
-        <p><a href="https://www.wikiwand.com/en/articles/Shannon%27s_source_coding_theorem">Shannon's source coding theorem</a> states that the expected codelength of any prefix code is lower-bounded by the entropy, bounding the maximum possible compression. Furthermore, it gives a construction for a prefix code $f$ such that the expected codelength is upper-bounded by the entropy plus one (in fact, our example code achieved entropy exactly). Specifically, we have</p>
+        <p><a href="https://www.wikiwand.com/en/articles/Shannon%27s_source_coding_theorem">Shannon's source coding theorem</a> states that the expected codelength of any prefix code is lower-bounded by the entropy. Furthermore, it gives a construction for a prefix code $f$ such that the expected codelength is upper-bounded by the entropy plus one (in fact, the compression rate of our example code is precisely the entropy). Specifically, we have</p>
 
         <p class="math">
           $$H(P) \leq \Eof{x\sim P}{|f(x)|} \leq H(P) + 1$$
         </p>
 
-        <p>Lower bound: We define a distribution $Q_f$ over bitstrings $x$ where the probability of $x$ is inversely proportional to the length of its codeword (one motivation is our earlier observation that likelier words should get shorter codes). </p>
+        <p>Lower bound: We define a distribution $Q_f$ over bitstrings $x$ where the probability of $x$ is inversely proportional to the length of its codeword (one motivation for this distribution is our earlier observation that likelier words should get shorter codes). </p>
 
         <p class="math">
           $$Q_f(x) = \frac{2^{-|f(x)|}}{Z}\text{ where }Z_f = \sum_{x}2^{-|f(x)|}$$
@@ -124,13 +124,13 @@
 
         <h4>Sample level complexity</h4>
 
-        <p>For setup, Turing machines accept valid programs $h$ as bitstrings (with potentially other tapes and read/write mechanisms) and output bitstrings $x$ if they halt. Prefix-free Turing machines have a prefix-free domain (no valid program is a prefix of another) and universal Turing machines can simulate any other Turing machine given its description as an input. The Kolmogorov complexity of a string $K(x)$ is the length of the shortest program under a fixed universal prefix-free Turing machine $U$ that produces $x$, or.</p>
+        <p>For setup, Turing machines accept valid programs $h$ as bitstrings and output bitstrings $x$ if they halt. Prefix-free Turing machines have a prefix-free domain (no valid program is a prefix of another) and universal Turing machines can simulate any other Turing machine given its description as an input. The Kolmogorov complexity of a string $K(x)$ is the length of the shortest program under a fixed universal prefix-free Turing machine $U$ that produces $x$, or</p>
 
         <p class="math">
           $$K(x) = \min\{|h| : U(h) = x\}$$
         </p>
 
-        <p>One might be concerned that the specific implementation of the universal Turing machine $U$ may affect the Kolmogorov complexity. Interestingly, choosing between universal Turing machines $T_1$ and $T_2$ only affects the Kolmogorov complexity up to a constant that depends on $T_1, T_2$. This is because universality allows us to simulate $T_1$ within $T_2$. Therefore, if there was a substantially shorter program in $T_1$, one could simulate it in $T_2$ after implementing the transpiler in constant bits. For a more concrete example, if there was an exceedingly short program in C++, we could first write a C++ interpreter in Python before specifying the C++ program. Going forward, we will always operate under an arbitrary such Turing machine $U$.</p>
+        <p>One might be concerned that the specific implementation of the universal Turing machine $U$ may affect the Kolmogorov complexity. Interestingly, choosing between universal Turing machines $T_1$ and $T_2$ only affects the Kolmogorov complexity up to a constant that depends on $T_1, T_2$. This is because universality allows us to simulate $T_1$ within $T_2$. Therefore, if there was a substantially shorter program in $T_1$, one could simulate it in $T_2$ given a description of $T_1$. For a more concrete example, if there was an exceedingly short program in C++, we could first write a C++ interpreter in Python before specifying the C++ program. Going forward, we will always operate under an arbitrary such Turing machine $U$.</p>
 
         <h4>Distributional complexity</h4>
 
@@ -145,7 +145,7 @@
 
         <h4>Algorithmic coding theorem</h4>
 
-        <p>In this section, we show that compressing each sample algorithmically gets near optimal compression for every distribution, which can be treated as an algorithmic analogue to Shannon's source coding theorem. More formally, for distribution $P$, we have that </p>
+        <p>In this section, we show that compressing each sample algorithmically gets near optimal compression for every distribution, which can be treated as an algorithmic analogue to Shannon's source coding theorem. In this sense, the Kolmogorov complexity at the sample level contains the "randomness" of a string without making any reference to a probability distribution. More formally, for distribution $P$, we have that </p>
 
         <p class="math">
           $$H(P) \leq \Eof{x\sim P}{K(x)} \leq H(P) + K(P) + O(1)$$
@@ -155,17 +155,17 @@
         
         <br>
 
-        <p>Upper bound: For the lower bound, we will prove a lemma that proves the statement at a sample level for all distributions $P$:</p>
+        <p>Upper bound: For the lower bound, we will prove a lemma that proves the statement at a sample level for all distributions $P$</p>
 
         <p class="math">
           $$K(x) \leq K(P) - \log P(x) + O(1)$$
         </p>
 
-        <p>To show this upper bound, it suffices to provide an encoding of $x$ using an LHS number of bits. At a high level, we will encode as a sample from $P$ using the optimal prefix code. This proceeds in three parts.</p>
+        <p>To show this upper bound, it suffices to provide an encoding of $x$ using an RHS number of bits. At a high level, we will encode as a sample from $P$ using the optimal prefix code. This proceeds in three parts.</p>
 
         <ol>
           <li>Distribution $P$ ($K(P)$ bits): We first write down the program for the distribution. We will need likelihood evaluation to build a prefix code. </li>
-          <li>Prefix code builder ($O(1)$ bits): We write down a program such that when its given a distribution, it will deterministically build a prefix code that optimally compresses the distribution (using the explicit construction we discussed from the Shannon-Fano code we discussed). Though the prefix code might take time and space to build, the program that builds it is short and can be implemented in a constant number of bits.</li>
+          <li>Prefix code builder ($O(1)$ bits): We write down a program such that when its given a distribution, it will deterministically build a prefix code that optimally compresses the distribution (using the explicit construction from the Shannon-Fano code we discussed). Though the prefix code might take time and space to build, the program that builds it is short and can be implemented in a constant number of bits.</li>
           <li>Codeword ($-\log P(x) + O(1)$ bits): We can now represent $x$ using its associated codeword $y$. By the nature of our construction, this will only take $-\log P(x)$ bits (likelier samples will require less bits).</li>
         </ol>
 
@@ -173,17 +173,19 @@
 
         <br>
 
-        <p>Overall, the theorem states that even if we compress strings at a sample level using Kolmogorov complexity, we can achieve near optimal compression for any distribution $P$ (paying a price of $K(P)$ extra bits). Therefore, we can consider Kolmogorov complexity a "univeral compressor".</p>
+        <p>Overall, the theorem states that even if we compress strings at a sample level using Kolmogorov complexity, we can achieve near optimal compression for any distribution $P$ by paying a price of $K(P)$ extra bits. Therefore, we can consider Kolmogorov complexity a "univeral compressor". The distribution induced by $K(x)$ is called the "universal distribution" and has a billion wonderful properties we won't discuss here.</p>
 
         <h4>Structural information for samples? (sophistication)</h4>
 
-        <p>Though we have quantified the information content in a distribution via difficulty of compression, our notions do not intuitively align with our intuition for "structural information". For example, we believe that the uniform distribution does not exhibit significantly interesting structure (correctly captured by low $K(P)$) but it has really high entropy (and thus high expected Kolmogorov complexity). It is an enticing question to ask whether we can better quantify the structure contained within a bitstring. A long line of work is well summarized in the coffee automaton paper (<cite><a href="https://arxiv.org/abs/1405.6903">Aaronson et al, 2014</a></cite>) which draws inspiration from the complexity of coffee and cream in a cup. There have been many attempts to satisfyingly quantify complexity for samples, the most representative attempts being (coarsened) (naive) sophistication and logical depth. In <a href="#app-a">Appendix A</a>, we detail these metrics and their shortcomings at quantifying. As a sneak peek, Part 2 will show how epiplexity finds it more satisfying to quantify complexity (1) at the distribution level (2) under time constraints. </p>
+        <p>Though we have quantified the information content in a sample via the difficulty of compression, we note that our notion of complexity does not align with our intuitions of "structure". For example, we believe that the uniform distribution does not exhibit significantly interesting structure (as evidenced by low $K(P)$). However, the distribution has high entropy and thus the majority of samples have high Kolmogorov complexity. Therefore, our current notions do not capture structure at a sample level. </p>
+          
+        <p> It is an enticing question to ask whether we can better quantify the structure of a sample. A long line of work is well summarized in the coffee automaton paper (<cite><a href="https://arxiv.org/abs/1405.6903">Aaronson et al, 2014</a></cite>) which draws inspiration from the complexity of coffee and cream in a cup. The paper aims to capture the following intuition: when coffee and cream are fully mixed or fully seperate there is low structure but when coffee and cream are in the process of mixing there is high structure. The most representative attempts of quantifying complexity are (coarsened) (naive) sophistication and logical depth. In <a href="#app-a">Appendix A</a>, we detail these metrics and show how they are both equivalent and deficient at quantifying complexity at the sample level. As a sneak peek, Part 2 will show how epiplexity finds it more satisfying to quantify complexity (1) at the distribution level (2) under time constraints. </p>
 
         <h3>Conclusion</h3>
 
-        <p>Hopefully the above posts offers a simple theoretical framework for quantifying structural and random information. However, such notions still feels inadequate: pseudo-random number generators should intuitively have high random information, and math should intuitively have high structural information, but our current notions would give low structural and random information to both. In the next post, we will show how epiplexity <cite><a href="https://arxiv.org/abs/2601.03220">(Finzi et al, 2026)</a></cite> can potentially resolve such concerns with distributional complexity and compute constraints. Thank you for reading, and feel free to reach out with any questions or thoughts!</p>
+        <p>Hopefully the above posts offers a simple introduction to quantifying information content through compression (of samples or distributions). However, such notions still feels inadequate: pseudo-random number generators should intuitively have high random information, and math should intuitively have high structural information, but our current notions would give low structural and random information to both. In the next post, we will show how epiplexity <cite><a href="https://arxiv.org/abs/2601.03220">(Finzi et al, 2026)</a></cite> can potentially resolve such concerns with distributional complexity and compute constraints. Thank you for reading, and feel free to reach out with any questions or thoughts!</p>
 
-        <h3 id="app-a">Appendix A: Sophistication (WIP)</h3>
+        <h3 id="app-a">Appendix A: Sophistication</h3>
 
         <p>To separate the random information from the structural information within a string, naive sophistication aims to quantify the complexity of defining a typical set. For a sample $x$, a typical set $S$ satisifies $K(x \given S) \geq \log |S| - c$ (the shortest description of $x$ is as a random element of $S$ up t a constant threshold $c$). Naive c-sophistication ($\text{nsoph}_c(x)$) is the minimum of $K(S)$ over all typical sets for $x$. To remove the sensitivity to $c$, we can take coarsened naive c-sophistication as $\text{cnsoph}_c(x) = \min_c \{c + \text{nsoph}_c(x)\}$. The naive sophistication is at worst $K(x) + O(1)$ which can is witnessed by $S = \{x\}$. We have already shown that most strings have high Kolmogorov complexity; such strings are low sophistication because we can take $S$ to be the set of all bit strings.</p>
 
