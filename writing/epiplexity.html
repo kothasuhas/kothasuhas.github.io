@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en" id="html">
+
+<head>
+    <meta charset="utf-8">
+    <title>Suhas Kotha</title>
+    <!-- <script src="jquery-3.6.3.min.js"></script> -->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script type="text/x-mathjax-config">
+        MathJax.Hub.Config({
+          tex2jax: {
+            inlineMath: [['$', '$'], ['\\(', '\\)']],
+            displayMath: [['$$', '$$'], ['\\[', '\\]']],
+            processEscapes: true
+          },
+          TeX: {
+            extensions: ["AMSmath.js", "AMSsymbols.js"],
+            equationNumbers: { autoNumber: "AMS" }
+          },
+        });
+    </script>
+    <script type="text/javascript" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS_CHTML"></script>
+    </script>
+    <meta name="description" content="From Entropy to Epiplexity (Interestingness Part 2)">
+    <meta name="author" content="Suhas Kotha">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href='https://fonts.googleapis.com/css?family=Quicksand' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" href="../css/style.css?v=<?php echo rand(); ?>">
+    <link rel="icon" type="image/png" href="../images/dragon_logo.png">
+    <style id="autogen"></style>
+</head>
+
+<body style="max-width: 100%; margin: 0 auto;">
+    <p><a href=../index.html>Home</a></p>
+    <div class="blog-post">
+        <br>
+
+        <h1>From Entropy to Epiplexity (Interestingness Part 2)</h1>
+
+        \(
+        \def\R{\mathbb{R}}
+        \def\model{q_\theta}
+        \newcommand{\fd}[2]{D_f(#1 \; \| \; #2)}
+        \newcommand{\Eof}[2]{\mathbb{E}_{#1}\left[#2\right]}
+        \newcommand{\p}[1]{\left(#1\right)}
+        \newcommand{\b}[1]{\left[#1\right]}
+        \newcommand{\br}[1]{\left\{#1\right\}}
+        \newcommand{\KL}[2]{D_{\text{KL}}\p{#1\;||\;#2}}
+        \newcommand{\CE}[2]{\text{H}\p{#1, #2}}
+        \newcommand{\H}[1]{\text{H}\p{#1}}
+        \newcommand{\kde}[1]{\hat{p}_n(#1)}
+        \newcommand{\MSE}{\text{MSE}}
+        \)
+
+        <br>
+        <p style="text-align: center;">1/29/2025</p>
+        <br>
+
+        <p><i>Unless you are a whiz at algorithmic information theory, you will find it helpful to read <a href="algo-info-theory.html">Interestingness Part 1</a> first.</i></p>
+
+        <br>
+
+        <p>In the previous post, we discussed classical notions of quantifying information content via information theory and algorithmic complexity. We found that entropy was close to the Kolmogorov complexity at the sample level, whereas Kolmogorov complexity of the distribution captures something else. For example, the uniform distribution is high entropy and high Kolmogorov per sample (suggesting high random information) and low Kolmogorov for the distribution (suggesting low structural information). However, these classical notions would assign low random information to pseudo-random number generators and low structure to the distribution of math proof (discussed more in depth later).</p>
+
+        <br>
+
+        <p>In this post, we cover how epiplexity <cite><a href="https://arxiv.org/abs/2601.03220">(Finzi et al, 2026)</a></cite> correctly resolves these paradoxes via computational constraints. Moreover, we will cover the interesting implications for for machine learning algorithms extract structure from data. </p>
+
+        <h3>Failures of complexity and entropy</h3>
+
+        <p>We first go over two examples that motivate the failures of distributional complexity and entropy. This is a rearrangement of the three paradoxes from the original paper.</p>
+
+        <ol>
+          <li>Mathematics (clasically low structure, intuitively high structure). A distribution we might believe has high structure is the distribution over all math theorems that type check in Lean in a finite amount of time. However, the Kolmogorov complexity of this distribution is quite low: we can simply write a program that enumerates all finite strings and checks compilation in Lean. More generally, we find it hard to construct examples of distributions that have high $K(P)$.</li>
+          <br>
+          <li>Pseudo-random number generators (classically low randomness, intuitively high randomness). The data processing inequality says that deterministic functions can not increase the total information content present in data. On the contrary, PRNGs leverage an NP-hard problem to deterministically expand $k$ advice bits (i.e. seed) into $n = \text{poly}(k)$ bits that appear random to any polynomial time algorithm. By the data processing inequality, the entropy of the data can not increase under deterministic functions and is therefore bounded by the entropy of the advice ($\leq k$). On the other hand, to any polynomial time algorithm, the bits would appear random and intuitively contains an entropy closer to $n$ bits.</li>
+          <br>
+          <li>Reordering data (classical similar information, intuitively different information). TODO</li>
+        </ol>
+
+        <p>Between both examples, a common theme is that the intuition deviates from the theory due to time constraints. Epiplexity addresses this by thinking about learning under compute constraints. We first introduce learning.</p>
+
+        <h3>Learning via minimum description length</h3>
+
+        <p>So far, our notions of random information (entropy) and structural information (minimum program length for the distribution) have been kept separate from each other. However, when selecting models according to data (i.e. learning), we are interested in balancing both. This classical idea of Occam's razor (selecting the simplest hypothesis that explains the data) can be formalized as minimizing the total description length of describing a hypothesis and describing the data under this hypothesis. More formally, for candidate programs $\mathcal{H}$, the minimum description length is</p>
+
+        <p class="math">
+          $$L(x) = \min_{h\in\mathcal{H}} |h| - \Eof{x\sim P}{\log P_h(x)}$$
+        </p>
+
+        <p>We can decompose the total description length at the minimizer into its structural component $|h|$ and random component $- \Eof{x\sim P}{\log P_h(x)}$ which we will denote $S_{\infty}(P)$ and $H_{\infty}(P)$ (suggestive of future notation).</p>
+
+        <h3>Epiplexity</h3>
+
+        <p>The only difference between MDL is that we will constraint the candidate programs to run in time less than $T(n)$ for length $t$ inputs.</p>
+
+        <p class="math">
+          $$L_T(X) = \min_{H \in \mathcal{H}_T} |h| - \Eof{x\sim P}{\log P_h(x)}$$
+        </p>
+
+        <p>Similar to MDL we will capture the structural information $|h|$ as the <b>epiplexity</b> $S_T(P)$ and the random information $- \Eof{x\sim P}{\log P_h(x)}$ as the <b>time-bounded entropy</b> $H_T(P)$.</p>
+
+        <br>
+
+        <p>Basic properties TODO</p>
+
+        <br>
+
+        <p>This notion resolves both of the failure examples we provided. </p>
+        
+        <ol>
+          <li>For math, given infinite compute, we have low epiplexity. However, when restricting the compute, there is a tradeoff between using shorter programs and more accurately capturing the distribution. Balancing both desiderata will likely yield longer math programs that amortize the most repeatable structures in math, increasing the epiplexity relative to the infinite compute regime.</li>
+          <br>
+          <li>For pseudo-random number generators that expand $k$ random bits into $n = \text{poly}(k)$ bits, we know that the Shannon entropy is upper-bounded by $k$. On the other hand, time-bounded entropy for polynomial $T$ can not be significantly lower than $n$ without violating our cryptographic assumptions. Therefore, time-bounded entropy correctly captures that pseudo-random number generators are effectively random.</li>
+          <br>
+          <li>ORDER TODO</li>
+        </ol>
+
+        <h3>Epiplexity for machine learning</h3>
+
+        <h4>Estimating program length via prequential coding</h4>
+
+        <p>One naive way to estimate the program length is count the number of bits necessary to encode the architecture and parameters. However, the authors point out this might significantly overestimate the length of the shortest program since it is known that neural network weights are highly compressible.</p>
+
+        <br>
+
+        <p>One classical scheme to encode the model is via prequential coding. In this scheme, we only encode the program necessary to initialize the model and encode the data points with respect to the model over the course of training. More specifically,</p>
+
+        <ul>
+          <li>Initialize the model architecture, weights, and optimizer using a constant number of bits.</li>
+          <li>At training step $i$, you are presented with model checkpoint $Q_i$ and data point $x_i$. Use the prefix code induced by $Q_i$ to entropy code the data point in $-\log Q_i(x_i)$ bits. </li>
+        </ul>
+
+        <p>The data contained above can be executed as a program to produce the final model: initialize the model, decode the original sample, take a gradient update, and repeat for all the data points. However, this coding scheme includes the bits for compressing both the model and the entire dataset. As a post-hoc correction, one can approximate the bits of the $M$ images via entropy coding with the final model checkpoint $Q_M$. Therefore, we can approximate the model description length as</p>
+
+        <p class="math">
+          $$\sum_{i\in[M]} -\log Q_i(x_i) + \log Q_M(x_i)$$
+        </p>
+
+        <p>or, the area under the loss curve until the terminating loss. TODO FIGURE. </p>
+
+        <br>
+
+        <p>The paper makes a good point that the above coding scheme has a lot of heuristics and alternatively considers requential coding (employing a plausibly better set of heuristics). Fortunately, the authors find that the two metrics correlate empirically, even if requential coding is $2-10\times$ shorter description lengths. Nonetheless, all their main experiments only use prequential coding.</p>
+
+        <h4>Empirical predictions</h4>
+
+        <p>TODO</p>
+
+        <h4>Scaling phenomena</h4>
+
+        <p>TODO</p>
+
+        <h3>Conclusion</h3>
+
+        <p>TODO. Thank you for reading, and feel free to reach out with any questions or thoughts!</p>
+
+        <!-- To understand queue
+            - Algorithmic coding theorem
+            - All the scaling arguments
+            - Computational pseudoentropy
+            - Naive soph c = soph c [Verschagin and Vitanyi 2004]
+            - Why the halting condition is necessary (I think the paper shows why time-bounded soph_c is bad but not why time-bounded naive soph_c is bad. but these are probably equivalent anyways)
+            - Diagonalization argument -->
+        
+
+        <script type="text/javascript" src="../js/post.js"></script>
+    </div>
+</body>
+
+</html>
+
+
+<!-- publish link: http://www.andrew.cmu.edu/server/publish.html -->
