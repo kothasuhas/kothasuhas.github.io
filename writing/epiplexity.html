@@ -60,11 +60,11 @@
 
         <br>
 
-        <p>In the previous post, we discussed classical notions of quantifying information content via information theory and algorithmic complexity. We found that entropy was close to the Kolmogorov complexity at the sample level, whereas Kolmogorov complexity of the distribution captures something else. For example, the uniform distribution is high entropy and high Kolmogorov per sample (suggesting high random information) and low Kolmogorov for the distribution (suggesting low structural information). However, these classical notions would assign low random information to pseudo-random number generators and low structure to the distribution of math proof (discussed more in depth later).</p>
+        <p>In the previous post, we discussed classical notions of quantifying information content via information theory and algorithmic complexity. We found that entropy was close to the Kolmogorov complexity at the sample level, whereas Kolmogorov complexity of the distribution captures something else. For example, the uniform distribution is high entropy and high Kolmogorov per sample (suggesting high random information) and low Kolmogorov for the distribution (suggesting low structural information). However, these classical notions would assign low random information to pseudo-random number generators and low structure to the distribution of math proofs (discussed more in depth later).</p>
 
         <br>
 
-        <p>In this post, we cover how epiplexity <cite><a href="https://arxiv.org/abs/2601.03220">(Finzi et al, 2026)</a></cite> correctly resolves these paradoxes via computational constraints. Moreover, we will cover the interesting implications for for machine learning algorithms extract structure from data. </p>
+        <p>In this post, we cover how epiplexity <cite><a href="https://arxiv.org/abs/2601.03220">(Finzi et al, 2026)</a></cite> correctly resolves these paradoxes via computational constraints. Moreover, we will cover the interesting implications for whether machine learning algorithms extract structure from data. </p>
 
         <h3>Failures of complexity and entropy</h3>
 
@@ -74,8 +74,6 @@
           <li>Mathematics (clasically low structure, intuitively high structure). A distribution we might believe has high structure is the distribution over all math theorems that type check in Lean in a finite amount of time. However, the Kolmogorov complexity of this distribution is quite low: we can simply write a program that enumerates all finite strings and checks compilation in Lean. More generally, we find it hard to construct examples of distributions that have high $K(P)$.</li>
           <br>
           <li>Pseudo-random number generators (classically low randomness, intuitively high randomness). The data processing inequality says that deterministic functions can not increase the total information content present in data. On the contrary, PRNGs leverage an NP-hard problem to deterministically expand $k$ advice bits (i.e. seed) into $n = \text{poly}(k)$ bits that appear random to any polynomial time algorithm. By the data processing inequality, the entropy of the data can not increase under deterministic functions and is therefore bounded by the entropy of the advice ($\leq k$). On the other hand, to any polynomial time algorithm, the bits would appear random and intuitively contains an entropy closer to $n$ bits.</li>
-          <br>
-          <li>Reordering data (classical similar information, intuitively different information). TODO</li>
         </ol>
 
         <p>Between both examples, a common theme is that the intuition deviates from the theory due to time constraints. Epiplexity addresses this by thinking about learning under compute constraints. We first introduce learning.</p>
@@ -102,18 +100,12 @@
 
         <br>
 
-        <p>Basic properties TODO</p>
-
-        <br>
-
-        <p>This notion resolves both of the failure examples we provided. </p>
+        <p>This notion resolves both of the failures we provided earlier. </p>
         
         <ol>
           <li>For math, given infinite compute, we have low epiplexity. However, when restricting the compute, there is a tradeoff between using shorter programs and more accurately capturing the distribution. Balancing both desiderata will likely yield longer math programs that amortize the most repeatable structures in math, increasing the epiplexity relative to the infinite compute regime.</li>
           <br>
           <li>For pseudo-random number generators that expand $k$ random bits into $n = \text{poly}(k)$ bits, we know that the Shannon entropy is upper-bounded by $k$. On the other hand, time-bounded entropy for polynomial $T$ can not be significantly lower than $n$ without violating our cryptographic assumptions. Therefore, time-bounded entropy correctly captures that pseudo-random number generators are effectively random.</li>
-          <br>
-          <li>ORDER TODO</li>
         </ol>
 
         <h3>Epiplexity for machine learning</h3>
@@ -128,32 +120,48 @@
 
         <ul>
           <li>Initialize the model architecture, weights, and optimizer using a constant number of bits.</li>
-          <li>At training step $i$, you are presented with model checkpoint $Q_i$ and data point $x_i$. Use the prefix code induced by $Q_i$ to entropy code the data point in $-\log Q_i(x_i)$ bits. </li>
+          <li>At training step $i$, maintain model checkpoint $Q_i$. To compress data point $x_i$, use the prefix code induced by $Q_i$ to entropy code the data point in $-\log Q_i(x_i)$ bits. </li>
         </ul>
 
-        <p>The data contained above can be executed as a program to produce the final model: initialize the model, decode the original sample, take a gradient update, and repeat for all the data points. However, this coding scheme includes the bits for compressing both the model and the entire dataset. As a post-hoc correction, one can approximate the bits of the $M$ images via entropy coding with the final model checkpoint $Q_M$. Therefore, we can approximate the model description length as</p>
+        <p>The data contained above can be executed as a program to produce the final model: initialize the model, decode the original sample with respect to the current checkpoint, take a gradient update, and repeat for all the data points. However, this coding scheme includes the bits for compressing both the model and the entire dataset. As a post-hoc correction, one can approximate the bits of the $M$ images via entropy coding with the final model checkpoint $Q_M$. Therefore, we can approximate the model description length as</p>
 
         <p class="math">
           $$\sum_{i\in[M]} -\log Q_i(x_i) + \log Q_M(x_i)$$
         </p>
 
-        <p>or, the area under the loss curve until the terminating loss. TODO FIGURE. </p>
+        <p>or, the area under the loss curve until the terminating loss as visualized as the blue region in Figure 1. </p>
+
+        <figure>
+          <img src="../images/interestingness/prequential.png" style="width: 70%;">
+          <figcaption>Figure 1: Visualization of prequential coding. </figcaption>
+          </p>
+        </figure>
 
         <br>
 
-        <p>The paper makes a good point that the above coding scheme has a lot of heuristics and alternatively considers requential coding (employing a plausibly better set of heuristics). Fortunately, the authors find that the two metrics correlate empirically, even if requential coding is $2-10\times$ shorter description lengths. Nonetheless, all their main experiments only use prequential coding.</p>
+        <p>The paper notes that the above coding scheme has a lot of heuristics and alternatively considers requential coding (red region, employing a plausibly better set of heuristics). Fortunately, the authors find that the two metrics correlate empirically, even if requential coding is $2-10\times$ shorter description lengths. Nonetheless, all their main experiments only use prequential coding.</p>
 
-        <h4>Empirical predictions</h4>
+        <h4>One experiment</h4>
 
-        <p>TODO</p>
+        <p>The paper has a couple of interesting experiments demonstrating possible applications for epiplexity in the context of data selection. A couple that are worth reading about are the cellular automata as well as what scaling laws imply about epiplexity as a function of compute and modality.</p>
 
-        <h4>Scaling phenomena</h4>
+        <br>
 
-        <p>TODO</p>
+        <p>We will cover what I think is the most interesting experiment for the paper surrounding chess. Consider two distinct formats for chess pre-training, as visualized in Figure 2 left: seeing the moves of a game followed by the final chess board (forward), or seeing the final chess board followed by the initial moves (reverse). Both directions have the same loss minimizer since the factorization of the probability distribution (i.e. the order of the tokens) doesn't change the underlying distribution. However, predicting the board given the moves is more computationally easy relative to inferring the moves given the board by marginalizing over all possible games. This is related to a fact that the epiplexity of $f^-1$ is not necessarily close to the epiplexity of $f$ (on the other hand, Kolmogorov complexity barely changes thanks to Levin search).</p>
+
+        <br>
+
+        <p>When training on this task, the total loss is higher for the reverse representation, as expected. However, when decomposing into epiplexity and time-bounded entropy, one finds that the epiplexity is higher for reverse training (Figure 2, middle). Intuitively, this captures that the model trained on reverse chess boards has extracted more structure from the task as its more computationally difficult. When testing on OOD chess tasks, the reverse model performs better than the forward model, suggesting that the reverse network generalizes better (Figure 2, right). </p>
+
+        <figure>
+          <img src="../images/interestingness/chess-1.png" style="width: 56.4%;"><img src="../images/interestingness/chess-2.png" style="width: 30%;">
+          <figcaption>Figure 2: Chess example where epiplexity predicts OOD generalization on CP task. </figcaption>
+          </p>
+        </figure>
 
         <h3>Conclusion</h3>
 
-        <p>TODO. Thank you for reading, and feel free to reach out with any questions or thoughts!</p>
+        <p>Hopefully you found that epiplexity offers a fresh take on generalization as training for the maximum amount of extracted information. Thank you for reading, and feel free to reach out with any questions or thoughts!</p>
 
         <!-- To understand queue
             - Algorithmic coding theorem
