@@ -22,9 +22,17 @@ function renderPapers() {
         generatePaperHTML(
             "💜 Pre-training under infinite compute", 
             ["Konwoo Kim<sup>∞</sup>", "Suhas Kotha<sup>∞</sup>", "Percy Liang", "Tatsunori Hashimoto"], 
-            "Preprint 2025", 
+            "ICLR 2026 (Oral)", 
             "https://arxiv.org/abs/2509.14786",
             "https://github.com/marin-community/marin/tree/suhas/data-efficiency",
+            false
+        ),
+        generatePaperHTML(
+            "Replaying pre-training data improves fine-tuning", 
+            ["Suhas Kotha", "Percy Liang"], 
+            "Preprint 2026", 
+            "https://arxiv.org/abs/2603.04964",
+            "https://github.com/marin-community/marin/tree/bfbc4492aefe50291829e2ceebf1b3b94186da9c/experiments/two_stage",
             false
         ),
         generatePaperHTML(
