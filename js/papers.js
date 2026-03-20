@@ -28,6 +28,14 @@ function renderPapers() {
             false
         ),
         generatePaperHTML(
+            "Data-efficient pre-training by scaling synthetic megadocs", 
+            ["Konwoo Kim<sup>📄</sup>", "Suhas Kotha<sup>📄</sup>", "Yejin Choi", "Tatsunori Hashimoto", "Nick Haber", "Percy Liang"], 
+            "Preprint 2026", 
+            "https://arxiv.org/abs/2603.18534",
+            "https://github.com/marin-community/marin/tree/suhas/data-efficiency",
+            false
+        ),
+        generatePaperHTML(
             "Replaying pre-training data improves fine-tuning", 
             ["Suhas Kotha", "Percy Liang"], 
             "Preprint 2026", 
