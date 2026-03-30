@@ -44,6 +44,14 @@ function renderPapers() {
             false
         ),
         generatePaperHTML(
+            "Scaling Parametric Knowledge Acquisition Beyond RAG", 
+            ["Seungju Han, Konwoo Kim, Chanwoo Park, Benjamin Newman, Suhas Kotha, Jaehun Jung, James Zou, Yejin Choi"], 
+            "Preprint 2026", 
+            "https://arxiv.org/abs/2603.23562",
+            "NA",
+            false
+        ),
+        generatePaperHTML(
             "Repetition Improves Language Model Embeddings", 
             ["Jacob Mitchell Springer", "Suhas Kotha", "Daniel Fried", "Graham Neubig", "Aditi Raghunathan"], 
             "ICLR 2025", 
