@@ -164,7 +164,7 @@
 
         <br>
         
-        <p>However, this can prevent going further off-policy. One striking failure mode of PPO is that the policy will not move at all for positive updates that trigger clipping. This is because when clipping triggers, the importance sampling weight becomes a constant, the reward is also a constant, and the gradient becomes zero. Though this is desired under the trust region intuition, this prevents more aggressive off-policy RL. Though we still need clipping for stability, we can apply it directly to the policy gradient via the following expression:</p>
+        <p>However, this can prevent going further off-policy. One striking failure mode of PPO is that the policy will not move at all for positive updates that used a clipped importance weight. This is because when clipping triggers, the importance sampling weight becomes a constant, the reward is also a constant, and the gradient becomes zero. Though this is desired under the trust region intuition, this prevents more aggressive off-policy RL. Though we still need clipping for stability, we can apply it directly to the policy gradient via the following expression:</p>
         <p class="math">
             \begin{aligned}
             \nabla_\theta J(\theta) = \Eof{\tau \sim \pigen} {\clip{\frac{\pitheta(\tau)}{\pigen(\tau)}}{1-\epsilon}{1+\epsilon} \nabla_\theta \log \pitheta(\tau) {R(\tau)}}
@@ -213,7 +213,7 @@
 
         <p class="math">
             \begin{aligned}
-            \mathcal{R}\pi(\tau) := \frac{R(\tau) \cdot \pi(\tau)}{\int_{\tau'} R(\tau) \cdot\pi({\tau'})}
+            \mathcal{R}\pi(\tau) := \frac{R(\tau) \cdot \pi(\tau)}{\int_{\tau'} R(\tau') \cdot\pi({\tau'})}
             \end{aligned}
         </p>
 
@@ -224,7 +224,7 @@
             & -\nabla_{\theta} \text{KL}(\mathcal{R}\pigen || \pitheta) \\
             &= -\nabla_{\theta} \Eof{\mathcal{R}\pigen}{\log \mathcal{R}\pigen(\tau) - \log \pitheta(\tau)} && \text{[definition]} \\
             &= -\nabla_{\theta} \Eof{\mathcal{R}\pigen}{- \log \pitheta(\tau)} && \text{[drop constant]} \\
-            &= \nabla_\theta \int_{\tau} {\frac{R(\tau) \cdot \pigen(\tau)}{\int_{\tau'} R(\tau)\cdot\pigen({\tau'})} \log \pitheta(\tau)} && \text{[convert to integral]} \\
+            &= \nabla_\theta \int_{\tau} {\frac{R(\tau) \cdot \pigen(\tau)}{\int_{\tau'} R(\tau')\cdot\pigen({\tau'})} \log \pitheta(\tau)} && \text{[convert to integral]} \\
             &\propto \nabla_\theta \int_{\tau} {R(\tau) \pigen(\tau)  \log \pitheta(\tau)} && \text{[drop constant]} \\
             &= \int_{\tau} {R(\tau) \pigen(\tau) \nabla_\theta  \log \pitheta(\tau)} && \text{[change order]} \\
             &= \Eof{\tau \sim \pigen}{R(\tau) \nabla_\theta \log \pitheta(\tau)} && \text{[convert to expectation]} \\
