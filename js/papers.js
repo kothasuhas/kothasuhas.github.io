@@ -9,11 +9,11 @@ function renderPapers() {
         }
         // Add purple heart for previously selected papers
         const heartPrefix = selected ? "💜 " : "";
+        const year = conference.match(/\b\d{4}\b/)?.[0];
         return `
             <p style="text-align: left"><a href="${link}">${heartPrefix}${title}</a></p>
-            <p style="font-size:0.65em">
-                ${authors.join(', ')}
-                <br> <i>${conference}</i>&nbsp&nbsp<a href="${link}">[arxiv]</a> ${codeLinkTag}
+            <p style="font-size:0.6em">
+                ${authors.join(', ')}${year ? `; ${year}` : ''}
             </p> <br> `;
     }
 
