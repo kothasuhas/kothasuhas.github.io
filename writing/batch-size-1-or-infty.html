@@ -149,7 +149,7 @@
 
         <br>
 
-        <p>A fun question that's neither here nor there: If lower batch sizes improve compute/data efficiency, can you get fractional batches? Atleast for sequence modeling, each data point is actually $L-1$ prediction problems for context length $L$. Though it might hurt compute efficiency to not take the gradient everytime we compute a forward pass, we might be able to squeeze extra data efficiency in the infinite compute regime if we were more clever about how we took the gradient update. Credits to Sam Park for motivating this.</p>
+        <p>A fun question that's neither here nor there: If lower batch sizes improve compute/data efficiency, can you get fractional batches? Atleast for sequence modeling, each data point is actually \(L-1\) prediction problems for context length \(L\). Though it might hurt compute efficiency to not take the gradient everytime we compute a forward pass, we might be able to squeeze extra data efficiency in the infinite compute regime if we were more clever about how we took the gradient update. Credits to Sam Park for motivating this.</p>
 
         <br>
 
