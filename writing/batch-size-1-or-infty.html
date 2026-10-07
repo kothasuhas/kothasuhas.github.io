@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en" id="html">
+
+<head>
+    <meta charset="utf-8">
+    <title>Batch size 1 or ∞</title>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+    </script>
+    <meta name="description" content="Batch size 1 or ∞">
+    <meta name="author" content="Suhas Kotha">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://fonts.googleapis.com/css?family=Quicksand" rel="stylesheet" type="text/css">
+    <link rel="stylesheet" href="../css/style.css?v=<?php echo rand(); ?>">
+    <link rel="icon" type="image/png" href="../images/hex_rows.png">
+    <style id="autogen"></style>
+    <style>
+        .batch-size-figure-panel {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .batch-size-figure-panel img {
+            width: 100%;
+            height: auto;
+        }
+
+        @media screen and (max-width: 700px) {
+            .batch-size-figure-panel {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body style="max-width: 100%; margin: 0 auto;">
+    <p><a href="../index.html">Home</a></p>
+    <div class="blog-post">
+        <br>
+
+        <h1>Batch size \(1\) or \(\infty\)</h1>
+
+        <br>
+        <p style="text-align: center;">10/6/2026</p>
+        <br>
+
+        <p>Batch size is important. Like other hyperparameters, it may be unclear what value is optimal for your setting. Unlike other hyperparameters (like learning rate and momentum), batch size has a complicated interaction with the actual resource constraints of the problem. It is common to hear inconsistent intuitions such as "you want the biggest batch size that fits on your hardware", "smaller batch size gets better generalization", and "you want a tuned medium batch size for practice". In fact, all of these statements are true, just under different resource constraints. This post is reiterating an extremely simple intuition from the <a href="https://arxiv.org/abs/1812.06162">Critical Batch Size</a> literature:</p>
+
+        <ul>
+            <li>When only constrained by compute (i.e. FLOPs), batch size 1 is best</li>
+            <li>When only constrained by time (i.e. end to end training wall clock), batch size \(\infty\) (i.e. as large as possible) is best</li>
+        </ul>
+
+        <p>This framework has a couple of practical implications</p>
+        <ul>
+            <li>Intermediate batch sizes (i.e. not \(1\) or \(\infty\)) only make sense when balancing wall-clock with compute/data efficiency</li>
+            <li>Microbatching should never be beneficial for performance</li>
+        </ul>
+
+        <h3>Tuning other hyperparameters as a function of batch size</h3>
+
+        <p>The most important prerequisite is TUNE YOUR HYPERPARAMETERS! I believe the two most relevant hyperparameters when varying batch size are learning rate and momentum.</p>
+
+        <br>
+
+        <p>There are a couple of mental models for how the optimal learning rate \(\eta^*\) should change as a function of batch size \(B\). You should read <cite><a href="https://sadhikamalladi.github.io/blog/2024/01/22/SDEs-ScalingRules/">Malladi, 2024</a></cite> for a good exposition. The Noisy Quadratic Model <cite>(<a href="https://arxiv.org/abs/1907.04164">Zhang et al., 2019</a>)</cite> predicts that </p>
+        <ol>
+            <li>For SGD, \(\eta^* \propto B\)</li>
+            <li>For Adam with large batch size, \(\eta^* \propto \sqrt{B}\)</li>
+            <li>For Adam with small batch size, \(\eta^* \propto B\)</li>
+        </ol>
+
+        <p>An often overlooked hyperparameter is \(\beta_2\), the momentum parameter in AdamW. <cite><a href="https://arxiv.org/abs/2507.07101">Marek et al, 2025</a></cite> predicts that the optimal choice of \(\beta_2^*\) follows \(\log \beta_2^* \propto B\). The paper empirically demonstrates that reparameterizing \(\beta_2\) in terms of a half-life \(t_2 \propto -\frac{B}{\log(\beta_2)}\) results in a hyperparameter invariant across batch size (displayed in Figure 1).</p>
+
+        <figure>
+            <img src="../images/batch-size/marek-beta2-half-life.png" alt="Validation loss across batch size, beta two, and half-life" style="max-width: 100%; height: auto;">
+            <p>
+            <figcaption>Figure 1: Loss for various choices of batch size and \(\beta_2\). The optimal \(\beta_2\) decreases with batch size, captured by the reparameterization under \(t_2\). Original figure from <cite><a href="https://arxiv.org/abs/2507.07101">Marek et al., 2025</a></cite> Figure 4.</figcaption>
+            </p>
+        </figure>
+
+        <h3>Resource constraints</h3>
+
+        <p>Given that our hypers are tuned, suppose we trained with batch size \(B\) for \(K\) steps on fresh data points. This corresponds to processing \(D=BK\) data points. Here, we draw an important distinction between FLOPs (floating point operations) and time (which may both confusingly be called compute colloquially).</p>
+        <ul>
+            <li>The FLOP count only depends on \(D=BK\) instead of \(B, K\) seperately. This is what we will refer to as "compute".</li>
+            <li>Time only tracks the number of steps \(K\) the optimizer has taken. The batch size does not matter since the entire gradient update can be taken in parallel when unconstrained by FLOPs. </li>
+        </ul>
+
+        <p>As an example, the sequential nature of 2 updates at batch size 1 costs 2x more time than 1 update at batch size 1000 even if it takes 500x less compute. This distinction between FLOPs and time frequently appears in parallel algorithm analysis as "work" and "span".</p>
+
+        <h3>Critical Batch Size</h3>
+
+        <p>The Critical Batch Size literature offers a mental model for how different choices of \(B\) affect the number of steps necessary to hit a target validation loss. As a reminder, our claim at the start of the post was "To minimize compute (i.e. \(\propto D=BK\)), use batch size 1. To minimize time (i.e. \(\propto K\)), use as large of a batch size as possible". The original <a href="https://arxiv.org/abs/1812.06162">Critical Batch Size paper</a> offers an incredible visualization of these tradeoffs which we show in Figure 2.</p>
+
+        <figure>
+            <img src="../images/batch-size/mccandlish-training-speed-efficiency.png" alt="Training speed and training efficiency across batch sizes" style="max-width: 100%; height: auto;">
+            <p>
+            <figcaption>Figure 2: Left visualizes wall clock and right visualizes compute. Original figure from <cite><a href="https://arxiv.org/abs/1812.06162">McCandlish et al., 2018</a></cite> Figure 6.</figcaption>
+            </p>
+        </figure>
+
+        <p>Figure 3 (taken from <cite><a href="https://arxiv.org/abs/2410.21676">Zhang et al., 2025</a></cite>) visualizes this tradeoff in more detail. The orange line \(D=BK\) is equivalent to fixing the number of data points \(D\) while changing the batch size. If the true step count to reach target (blue line) were on the orange line for all \(B\), it would imply that the choice of \(B\) is irrelevant for compute efficiency. However, the schematic predicts that the blue line will deviate from the orange at large batch sizes at which point larger batch sizes still monotonically reduce step count while taking more compute. The Critical Batch Size literature is concerned with finding the smallest step count at which the compute regret is less than e.g. 20%.</p>
+
+        <br>
+            
+        <p>Under this diagram, if we cared about minimizing \(BK\) we would send \(B\) to 1 and if we cared about minimizing \(K\) we would send \(B\) to \(\infty\). To contradict the first conclusion we would need the step count line to curl away from \(D=BK\) at small \(B\) and to contradict the second conclusion we would need the blue line to break monotonicity at large \(B\).</p>
+
+        <figure>
+            <img src="../images/batch-size/vyas-critical-batch-size.png" alt="Steps to reach target loss as a function of batch size" style="max-width: 85%; height: auto;">
+            <p>
+            <figcaption>Figure 3: The orange line visualizes a training algorithm which pays no price on compute for large step counts (i.e. low wall clock). The reality is predicted to be the blue line, which pays a price at larger step counts. Original figure from <cite><a href="https://arxiv.org/abs/2410.21676">Zhang et al., 2025</a></cite> Figure 5.</figcaption>
+            </p>
+        </figure>
+
+        <p>These relationships are cleanly predicted by the Noisy Quadratic Model <cite>(<a href="https://arxiv.org/abs/1907.04164">Zhang et al., 2019</a>)</cite> (which we cover in CS312!). In Figure 4 left, we show how the theory in the NQM makes the same predictions as the mental model in Figure 3. The authors of the original paper find that their theoretical model agrees with practice in Figure 4 right. One interesting related finding is the benefit of momentum and preconditioning for different batch sizes. Interestingly, momentum and preconditioning helps significantly at large batch sizes but basically doesn't help at small batch size. This suggests that the main benefit of modern optimizers comes from increasing the critical batch size to reduce wall clock, not compute efficiency. At alternate framing is that modern optimizers only improve compute efficiency when and only when constrained to large batch sizes.</p>
+
+        <figure>
+            <div class="batch-size-figure-panel">
+                <img src="../images/batch-size/nqm-theory.png" alt="Noisy Quadratic Model theory across batch sizes">
+                <img src="../images/batch-size/nqm-transformer.png" alt="Transformer steps to target across batch sizes">
+            </div>
+            <p>
+            <figcaption>Figure 4: Original figures from <cite><a href="https://arxiv.org/abs/1907.04164">Zhang et al., 2019</a></cite> Figures 3a and 5f.</figcaption>
+            </p>
+        </figure>
+
+        <p>From my experiments, I believe a similar thing holds for the truly data-constrained regime where you train regualarized overparameterized models with optimal epoching. Anybody want to make the plot for me?</p>
+
+        <h3>Implications</h3>
+
+        <p>When somebody claims that the right batch size is between \(1\) and \(\infty\), I have two immediate gut reactions</p>
+        <ol>
+            <li>They did not tune their hyperparameters (most likely \(\beta_2\) if they're using AdamW).</li>
+            <li>They are reasoning about practical<sup>TM</sup> tradeoffs. Again, these practical tradeoffs definitely exist. But it is important (to me atleast) to acknowledge when an optimal batch size is balancing two constraints since only optimizing for time/compute/data should yield one of the extremes.</li>
+        </ol>
+
+        <p>One recent example of my suspicision is <cite><a href="https://arxiv.org/abs/2505.13738">Bergsma et al, 2025</a></cite>. When I saw their figures two weeks ago, I was immediately sussed out by their finding that there's an optimal batch size. When I opened the paper, I found that they acknowledge their main figures don't tune \(\beta_2\) and their preliminary experiments suggest that small batch sizes do much better with \(\beta_2\) tuning. </p>
+
+        <figure>
+            <img src="../images/batch-size/bergsma-optimal-batch-size-data.png" alt="Optimal batch size as a function of total tokens" style="max-width: 50%; height: auto;">
+            <p>
+            <figcaption>Figure 5: Figure claiming that the optimal batch size changes with scale without being clear about their resource constraints and untuned \(\beta_2\)'s. Original figure from <cite><a href="https://arxiv.org/abs/2505.13738">Bergsma et al., 2025</a></cite> Figure 1b.</figcaption>
+            </p>
+        </figure>
+
+        <p>This mental model also affects micro-batching (taking large batch gradients by splitting into multiple small batches and accumulating the gradient). The natural baseline is not doing gradient accumulation and simply applying the gradient update for every computed microbatch. First, observe that micro-batching does not affect wall clock time. Therefore, we can only improve compute/data efficiency. However, compute/data efficiency prefers smaller batch sizes. Therefore, as long as one can correctly tune the other hyperparameters, it is always better for performance to have no micro-batching for performant models. In my head, the main role of micro-batching is to simulate higher batch sizes for scientific purposes, not practical purposes.</p>
+
+        <br>
+
+        <p>A fun question that's neither here nor there: If lower batch sizes improve compute/data efficiency, can you get fractional batches? Atleast for sequence modeling, each data point is actually $L-1$ prediction problems for context length $L$. Though it might hurt compute efficiency to not take the gradient everytime we compute a forward pass, we might be able to squeeze extra data efficiency in the infinite compute regime if we were more clever about how we took the gradient update. Credits to Sam Park for motivating this.</p>
+
+        <br>
+
+        <p>Thank you for reading, and feel free to reach out with any questions or thoughts!</p>
+
+        <br>
+
+        <script type="text/javascript" src="../js/post.js"></script>
+    </div>
+</body>
+
+</html>
