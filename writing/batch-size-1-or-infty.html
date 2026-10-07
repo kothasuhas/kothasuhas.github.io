@@ -136,7 +136,7 @@
             <li>They are reasoning about practical<sup>TM</sup> tradeoffs. Again, these practical tradeoffs definitely exist. But it is important (to me atleast) to acknowledge when an optimal batch size is balancing two constraints since only optimizing for time/compute/data should yield one of the extremes.</li>
         </ol>
 
-        <p>One recent example of my suspicision is <cite><a href="https://arxiv.org/abs/2505.13738">Bergsma et al, 2025</a></cite>. When I saw their figures two weeks ago, I was immediately sussed out by their finding that there's an optimal batch size. When I opened the paper, I found that they acknowledge their main figures don't tune \(\beta_2\) and their preliminary experiments suggest that small batch sizes do much better with \(\beta_2\) tuning. </p>
+        <p>One recent example of my suspicision is <cite><a href="https://arxiv.org/abs/2505.13738">Bergsma et al, 2025</a></cite> (as well as <cite><a href="https://arxiv.org/abs/2503.04715">Li et al, 2025</a></cite>). When I saw the figures in both papers two weeks ago, I was immediately sussed out by their finding that there's an optimal batch size. When I opened the first paper, I found that they acknowledge their main figures don't tune \(\beta_2\) and their preliminary experiments suggest that small batch sizes do much better with \(\beta_2\) tuning. The second paper didn't acknowledge this limitation.</p>
 
         <figure>
             <img src="../images/batch-size/bergsma-optimal-batch-size-data.png" alt="Optimal batch size as a function of total tokens" style="max-width: 50%; height: auto;">
