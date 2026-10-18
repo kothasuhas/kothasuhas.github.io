@@ -71,6 +71,10 @@
             <li>For Adam with small batch size, \(\eta^* \propto B\)</li>
         </ol>
 
+        <p>Note that the exact learning rate tuning is confounded significantly by weight decay \(\lambda\) since you can reason about AdamW having an effective step size of \(\sqrt{\eta \lambda}\), not \(\eta\) (refer to CS 312 <a href="https://deep-learning-alchemy.github.io/assets/slides/lecture_03.pdf">Optimization 1 Lecture 1</a> slide 39 and <a href="https://deep-learning-alchemy.github.io/assets/assignments/a2_hyperparameter_scaling.pdf">Assignment 2</a> Problem 2 for more details). </p>
+
+        <br>
+
         <p>An often overlooked hyperparameter is \(\beta_2\), the momentum parameter in AdamW. <cite><a href="https://arxiv.org/abs/2507.07101">Marek et al, 2025</a></cite> predicts that the optimal choice of \(\beta_2^*\) follows \(\log \beta_2^* \propto B\). The paper empirically demonstrates that reparameterizing \(\beta_2\) in terms of a half-life \(t_2 \propto -\frac{B}{\log(\beta_2)}\) results in a hyperparameter invariant across batch size (displayed in Figure 1).</p>
 
         <figure>
@@ -114,7 +118,7 @@
             </p>
         </figure>
 
-        <p>These relationships are cleanly predicted by the Noisy Quadratic Model <cite>(<a href="https://arxiv.org/abs/1907.04164">Zhang et al., 2019</a>)</cite> (which we cover in CS312!). In Figure 4 left, we show how the theory in the NQM makes the same predictions as the mental model in Figure 3. The authors of the original paper find that their theoretical model agrees with practice in Figure 4 right. One interesting related finding is the benefit of momentum and preconditioning for different batch sizes. Interestingly, momentum and preconditioning helps significantly at large batch sizes but basically doesn't help at small batch size. This suggests that the main benefit of modern optimizers comes from increasing the critical batch size to reduce wall clock, not compute efficiency. At alternate framing is that modern optimizers only improve compute efficiency when and only when constrained to large batch sizes.</p>
+        <p>These relationships are cleanly predicted by the Noisy Quadratic Model <cite>(<a href="https://arxiv.org/abs/1907.04164">Zhang et al., 2019</a>)</cite> (which we cover in CS312!). In Figure 4 left, we show how the theory in the NQM makes the same predictions as the mental model in Figure 3. The authors of the original paper find that their theoretical model agrees with practice in Figure 4 right. One interesting related finding is the benefit of momentum and preconditioning for different batch sizes. Interestingly, momentum and preconditioning helps significantly at large batch sizes but basically doesn't help at small batch size. This suggests that the main benefit of modern optimizers comes from increasing the critical batch size to reduce wall clock, not improve compute efficiency. An alternate framing is that modern optimizers improve compute efficiency when and only when constrained to large batch sizes.</p>
 
         <figure>
             <div class="batch-size-figure-panel">
